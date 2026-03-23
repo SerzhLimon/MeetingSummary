@@ -23,7 +23,7 @@ type Config struct {
 	// Postgres PostgresConfig `json:"postgres"`
 }
 
-func LoadConfig() Config {
+func LoadConfig() *Config {
 	var config Config
 	data, err := os.ReadFile(os.Getenv("CONFIG"))
 	if err != nil {
@@ -32,6 +32,6 @@ func LoadConfig() Config {
 	if err = json.Unmarshal(data, &config); err != nil {
 		log.Fatalf("cannot load bot config %v", err)
 	}
-
-	return config
+	log.Println("config create success")
+	return &config
 }
