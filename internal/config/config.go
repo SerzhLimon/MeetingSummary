@@ -13,6 +13,7 @@ type BotConfig struct {
 type SaluteSpeech struct {
 	ClientSecret string `json:"client_secret"`
 	ClientID     string `json:"client_id"`
+	IntervalTicker int `json:"interval_ticker"`
 }
 
 type PostgresConfig struct {

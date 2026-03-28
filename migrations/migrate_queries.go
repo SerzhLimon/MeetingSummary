@@ -2,7 +2,7 @@ package migrations
 
 const (
 	createEnum = `
-		CREATE TYPE status AS ENUM ('BEGIN', 'UPLOAD', 'RECOGNITION', 'WAIT', 'DOWNLOAD');
+		CREATE TYPE status AS ENUM ('FAIL', 'BEGIN', 'UPLOAD', 'RECOGNITION', 'WAIT', 'DOWNLOAD');
 	`
 
 	createTable = `
