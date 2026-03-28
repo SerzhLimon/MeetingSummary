@@ -125,6 +125,36 @@ func (s *Storage) GetVoiceForCheckStatus() ([]models.CheckStatusData, error) {
 }
 
 func (s *Storage) SetStatusWait(voiceID int64, respFileID string) error {
-    _, err := s.db.Exec(querySetStatusRecognition, voiceID, models.Wait, respFileID)
+    _, err := s.db.Exec(querySetStatusWait, voiceID, models.Wait, respFileID)
+    return err
+}
+
+func (s *Storage) GetVoiceForDownloadTrascription() ([]models.DownloadTranscriptionData, error) {
+    rows, err := s.db.Query(queryGetVoiceForDownloadTranscription, models.Wait)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var downloadTranscriptionList []models.DownloadTranscriptionData
+    
+    for rows.Next() {
+        var downloadTranscription models.DownloadTranscriptionData
+        err := rows.Scan(&downloadTranscription.VoiceID, &downloadTranscription.RespFileID)
+        if err != nil {
+            return nil, err
+        }
+        downloadTranscriptionList = append(downloadTranscriptionList, downloadTranscription)
+    }
+    
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+    
+    return downloadTranscriptionList, nil
+}
+
+func (s *Storage) SetStatusDownload(voiceID int64, text string) error {
+    _, err := s.db.Exec(querySetStatusRecognition, voiceID, models.Download, text)
     return err
 }

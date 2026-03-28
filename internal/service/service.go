@@ -58,6 +58,7 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 			w.upload()
 			w.recognize()
 			w.checkStatus()
+			w.downloadTranscription()
 		}
 	}
 }
@@ -127,6 +128,31 @@ func (w *SaluteWorker) checkStatus() {
 			continue
 		}
 		err = w.storage.SetStatusWait(checkStatusData[i].VoiceID, respFileID)
+		if err != nil {
+			logrus.Error(err)
+		}
+	}
+}
+
+func (w *SaluteWorker) downloadTranscription() {
+	downloadTranscriptionData, err := w.storage.GetVoiceForDownloadTrascription()
+	if err != nil {
+		//
+		logrus.Error(fmt.Errorf("SaluteWorker.checkStatus(): %w", err))
+		return
+	}
+	for i := range downloadTranscriptionData {
+		text, err := w.downloadTranscriptionExecute(downloadTranscriptionData[i])
+		if err != nil {
+			if errors.Is(err, models.VoiceIsProseccing) {
+				continue
+			}
+			logrus.Error(err)
+			err = w.storage.SetStatusFail(downloadTranscriptionData[i].VoiceID)
+			//
+			continue
+		}
+		err = w.storage.SetStatusDownload(downloadTranscriptionData[i].VoiceID, text)
 		if err != nil {
 			logrus.Error(err)
 		}

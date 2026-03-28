@@ -139,7 +139,7 @@ func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (s
 	w.getToken()
 
 	url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/task:get?id=%s", checkStatus.RecognizeID)
-	req, err := http.NewRequest("POST", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
 		return "", err
@@ -148,23 +148,70 @@ func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (s
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
 		return "", err
 	}
 
 	response := models.ResponseCheckStatus{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-        logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+        logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
         return "", err
     }
 	if response.Result.Status != "DONE" {
 		return "", models.VoiceIsProseccing
 	}
 	return response.Result.ID, nil
+}
+
+func (w *SaluteWorker) downloadTranscriptionExecute(download models.DownloadTranscriptionData) (string, error) {
+    w.getToken()
+
+    url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/data:download?response_file_id=%s", download.RespFileID)
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        logrus.Error("SaluteWorker.downloadTranscriptionExecute(): ", err)
+        return "", err
+    }
+    req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+
+    resp, err := w.client.Do(req)
+    if err != nil {
+        logrus.Error("SaluteWorker.downloadTranscriptionExecute(): ", err)
+        return "", err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        body, _ := io.ReadAll(resp.Body)
+        logrus.Errorf("SaluteWorker.downloadTranscriptionExecute(): status %d, body: %s", resp.StatusCode, string(body))
+        return "", fmt.Errorf("download failed with status: %d", resp.StatusCode)
+    }
+
+    response := []models.ResponseDownloadData{}
+    if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+        logrus.Error("SaluteWorker.downloadTranscriptionExecute(): ", err)
+        return "", err
+    }
+
+    if len(response) == 0 {
+        return "", fmt.Errorf("empty response from download endpoint")
+    }
+
+    var text string
+    for i := range response {
+        for j := range response[i].Results {
+            if text != "" {
+                text += " "
+            }
+            text += response[i].Results[j].Text
+        }
+    }
+
+    return text, nil
 }

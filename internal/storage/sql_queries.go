@@ -47,4 +47,16 @@ const (
 		SET process_step = $2, response_file_id = $3
 		WHERE id = $1
 	`
+
+	queryGetVoiceForDownloadTranscription = `
+		SELECT id, response_file_id
+		FROM voice_recognize_req
+		WHERE process_step = $1
+	`
+
+	querySetStatusDownload = `
+		UPDATE voice_recognize_req 
+		SET process_step = $2, transcription = $3
+		WHERE id = $1
+	`
 )
