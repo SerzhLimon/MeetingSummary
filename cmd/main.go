@@ -1,6 +1,12 @@
 package main
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
 	"github.com/SerzhLimon/MeetingSummary/internal/config/db"
 	"github.com/SerzhLimon/MeetingSummary/internal/service"
@@ -13,20 +19,49 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	db, err := db.InitPostgresClient(&cfg.Postgres)
+	// Инициализация БД
+	dbClient, err := db.InitPostgresClient(&cfg.Postgres)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
-	err = migrations.Up(db)
+	
+	err = migrations.Up(dbClient)
 	if err != nil {
 		logrus.Fatalln(err)
 	}
-	storage := storage.New(db)
+	defer func() {
+		migrations.Down(dbClient)
+		logrus.Info("Migrations down")
+	}()
+	storage := storage.New(dbClient)
+
+	// Создаем контекст с отменой
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	saluteWorker := service.InitWorker(cfg, storage)
+	go saluteWorker.Run(ctx)
 
 	bot := telebot.New(cfg, storage)
 	bot.Route()
-	bot.Start()
-	defer bot.Stop()
+	
+	go func() {
+		logrus.Info("Starting bot...")
+		bot.Start()
+	}()
+	
+	// Ожидаем сигналы завершения
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logrus.Info("Shutting down gracefully...")
+	
+	cancel()
+	
+	shutdownTimeout := 5 * time.Second
+	time.Sleep(shutdownTimeout)
+	
+	bot.Stop()
+	
+	logrus.Info("Shutdown completed")
 }

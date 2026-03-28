@@ -15,6 +15,7 @@ import (
 type TeleBot struct {
 	core    *tg.Bot
 	storage *s.Storage
+	stopCh  chan struct{}
 }
 
 func New(cfg *config.Config, storage *s.Storage) *TeleBot {
@@ -33,16 +34,20 @@ func New(cfg *config.Config, storage *s.Storage) *TeleBot {
 	return &TeleBot{
 		core:    bot,
 		storage: storage,
+		stopCh:  make(chan struct{}),
 	}
 }
 
 func (b *TeleBot) Start() {
-	log.Println("success start bot")
-	b.core.Start()
+	go func() {
+		b.core.Start()
+		close(b.stopCh)
+	}()
 }
 
 func (b *TeleBot) Stop() {
 	b.core.Stop()
+	<-b.stopCh
 }
 
 func (b *TeleBot) Route() {

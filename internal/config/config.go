@@ -2,8 +2,9 @@ package config
 
 import (
 	"encoding/json"
-	"log"
 	"os"
+
+	"github.com/sirupsen/logrus"
 )
 
 type BotConfig struct {
@@ -11,9 +12,9 @@ type BotConfig struct {
 }
 
 type SaluteSpeech struct {
-	ClientSecret string `json:"client_secret"`
-	ClientID     string `json:"client_id"`
-	IntervalTicker int `json:"interval_ticker"`
+	ClientSecret   string `json:"client_secret"`
+	ClientID       string `json:"client_id"`
+	IntervalTicker int    `json:"interval_ticker"`
 }
 
 type PostgresConfig struct {
@@ -35,11 +36,11 @@ func LoadConfig() *Config {
 	var config Config
 	data, err := os.ReadFile(os.Getenv("CONFIG"))
 	if err != nil {
-		log.Fatalf("cannot load bot config %v", err)
+		logrus.Fatalf("cannot load bot config %v", err)
 	}
 	if err = json.Unmarshal(data, &config); err != nil {
-		log.Fatalf("cannot load bot config %v", err)
+		logrus.Fatalf("cannot load bot config %v", err)
 	}
-	log.Println("config create success")
+	logrus.Info("config create success")
 	return &config
 }

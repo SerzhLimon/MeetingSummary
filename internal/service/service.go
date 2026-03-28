@@ -52,6 +52,7 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			logrus.Info("SaluteWorker: received shutdown signal, stopping...")
 			return
 		case <-ticker.C:
 			// logic
@@ -155,6 +156,8 @@ func (w *SaluteWorker) downloadTranscription() {
 		err = w.storage.SetStatusDownload(downloadTranscriptionData[i].VoiceID, text)
 		if err != nil {
 			logrus.Error(err)
+			continue
 		}
+		logrus.Infof("successfull download: %d", downloadTranscriptionData[i].VoiceID)
 	}
 }
