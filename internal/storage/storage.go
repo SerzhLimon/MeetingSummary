@@ -129,7 +129,7 @@ func (s *Storage) SetStatusWait(voiceID int64, respFileID string) error {
     return err
 }
 
-func (s *Storage) GetVoiceForDownloadTrascription() ([]models.DownloadTranscriptionData, error) {
+func (s *Storage) GetVoiceForDownloadTranscription() ([]models.DownloadTranscriptionData, error) {
     rows, err := s.db.Query(queryGetVoiceForDownloadTranscription, models.Wait)
     if err != nil {
         return nil, err
@@ -155,6 +155,6 @@ func (s *Storage) GetVoiceForDownloadTrascription() ([]models.DownloadTranscript
 }
 
 func (s *Storage) SetStatusDownload(voiceID int64, text string) error {
-    _, err := s.db.Exec(querySetStatusRecognition, voiceID, models.Download, text)
+    _, err := s.db.Exec(querySetStatusDownload, voiceID, models.Download, text)
     return err
 }

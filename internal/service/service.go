@@ -135,7 +135,7 @@ func (w *SaluteWorker) checkStatus() {
 }
 
 func (w *SaluteWorker) downloadTranscription() {
-	downloadTranscriptionData, err := w.storage.GetVoiceForDownloadTrascription()
+	downloadTranscriptionData, err := w.storage.GetVoiceForDownloadTranscription()
 	if err != nil {
 		//
 		logrus.Error(fmt.Errorf("SaluteWorker.checkStatus(): %w", err))

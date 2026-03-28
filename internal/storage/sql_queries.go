@@ -14,8 +14,9 @@ const (
 	`
 
 	querySetStatusFail = `
-		INSERT INTO voice_recognize_req (voice_data, process_step) 
-        VALUES ($1, $2)
+		UPDATE voice_recognize_req 
+		SET process_step = $2
+		WHERE id = $1
 	`
 
 	querySetStatusUpload = `
