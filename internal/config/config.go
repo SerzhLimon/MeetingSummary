@@ -12,9 +12,13 @@ type BotConfig struct {
 }
 
 type SaluteSpeech struct {
-	ClientSecret   string `json:"client_secret"`
-	ClientID       string `json:"client_id"`
-	IntervalTicker int    `json:"interval_ticker"`
+	ClientSecret string `json:"client_secret"`
+	ClientID     string `json:"client_id"`
+}
+
+type GigaChat struct {
+	ClientSecret string `json:"client_secret"`
+	ClientID     string `json:"client_id"`
 }
 
 type PostgresConfig struct {
@@ -27,9 +31,11 @@ type PostgresConfig struct {
 }
 
 type Config struct {
-	Bot      BotConfig      `json:"bot"`
-	Postgres PostgresConfig `json:"postgres"`
-	Salute   SaluteSpeech   `json:"salute_speech"`
+	Bot            BotConfig      `json:"bot"`
+	Postgres       PostgresConfig `json:"postgres"`
+	Salute         SaluteSpeech   `json:"salute_speech"`
+	GigaChat       GigaChat       `json:"giga_chat"`
+	IntervalTicker int            `json:"interval_ticker"`
 }
 
 func LoadConfig() *Config {

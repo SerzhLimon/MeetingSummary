@@ -2,74 +2,30 @@ package service
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/models"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
-func (w *SaluteWorker) getToken() {
-	if w.auth.ExpiresAt.After(time.Now()) {
-		return
-	}
-	rquid := uuid.New().String()
-	body := fmt.Sprintf("scope=%s", "SALUTE_SPEECH_PERS")
-	reqBody := strings.NewReader(body)
-
-	req, err := http.NewRequest("POST", "https://ngw.devices.sberbank.ru:9443/api/v2/oauth", reqBody)
-	if err != nil {
-		logrus.Error("SaluteWorker.Auth(): ", err)
-		return
-	}
-
-	authKey := base64.StdEncoding.EncodeToString([]byte(w.cfg.Salute.ClientID + ":" + w.cfg.Salute.ClientSecret))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("RqUID", rquid)
-	req.Header.Set("Authorization", "Basic "+authKey)
-
-	resp, err := w.client.Do(req)
-	if err != nil {
-		logrus.Error("SaluteWorker.Auth(): ", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	respBody, _ := io.ReadAll(resp.Body)
-	var result map[string]interface{}
-	err = json.Unmarshal(respBody, &result)
-	if err != nil {
-		logrus.Error("SaluteWorker.Auth(): ", err)
-	}
-	token := result["access_token"]
-	expiresAt := result["expires_at"]
-
-	w.auth.AccessToken = token.(string)
-	w.auth.ExpiresAt = time.UnixMilli(int64(expiresAt.(float64)))
-}
-
-func (w *SaluteWorker) uploadExecute(upload models.UploadData) (string, error) {
-	w.getToken()
+func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
+	w.getTokenSalute()
 
 	reqBody := bytes.NewReader(upload.VoiceData)
 
 	req, err := http.NewRequest("POST", "https://smartspeech.sber.ru/rest/v1/data:upload", reqBody)
 	if err != nil {
-		logrus.Error("SaluteWorker.uploadExecute(): ", err)
+		logrus.Error("Worker.uploadExecute(): ", err)
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
 	req.Header.Set("Content-Type", "audio/ogg")
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("SaluteWorker.uploadExecute(): ", err)
+		logrus.Error("Worker.uploadExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -80,16 +36,16 @@ func (w *SaluteWorker) uploadExecute(upload models.UploadData) (string, error) {
 
 	response := models.UploadResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logrus.Error("SaluteWorker.uploadExecute(): ", err)
+		logrus.Error("Worker.uploadExecute(): ", err)
 		return "", err
 	}
 
 	return response.Result.RequestFileID, nil
 }
 
-func (w *SaluteWorker) recognizeExecute(recognize models.RecognizeData) (string, error) {
+func (w *Worker) recognizeExecute(recognize models.RecognizeData) (string, error) {
 	// must return recognize_id
-	w.getToken()
+	w.getTokenSalute()
 	requestBody := models.RecognizeRequest{
 		Options: models.RecognizeRequestOptions{
 			Model:         "general",
@@ -109,7 +65,7 @@ func (w *SaluteWorker) recognizeExecute(recognize models.RecognizeData) (string,
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := w.client.Do(req)
@@ -130,20 +86,20 @@ func (w *SaluteWorker) recognizeExecute(recognize models.RecognizeData) (string,
 	return response.Result.ID, nil
 }
 
-func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (string, error) {
-	w.getToken()
+func (w *Worker) checkStatusExecute(checkStatus models.CheckStatusData) (string, error) {
+	w.getTokenSalute()
 
 	url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/task:get?id=%s", checkStatus.RecognizeID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
+		logrus.Error("Worker.checkStatusExecute(): ", err)
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
+		logrus.Error("Worker.checkStatusExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -154,7 +110,7 @@ func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (s
 
 	response := models.ResponseCheckStatus{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
+		logrus.Error("Worker.checkStatusExecute(): ", err)
 		return "", err
 	}
 	if response.Result.Status != "DONE" {
@@ -163,20 +119,20 @@ func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (s
 	return response.Result.ResponseFileID, nil
 }
 
-func (w *SaluteWorker) downloadTranscriptionExecute(download models.DownloadTranscriptionData) (string, error) {
-	w.getToken()
+func (w *Worker) downloadTranscriptionExecute(download models.DownloadTranscriptionData) (string, error) {
+	w.getTokenSalute()
 
 	url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/data:download?response_file_id=%s", download.RespFileID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logrus.Error("SaluteWorker.downloadTranscriptionExecute(): ", err)
+		logrus.Error("Worker.downloadTranscriptionExecute(): ", err)
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("SaluteWorker.downloadTranscriptionExecute(): ", err)
+		logrus.Error("Worker.downloadTranscriptionExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -187,7 +143,7 @@ func (w *SaluteWorker) downloadTranscriptionExecute(download models.DownloadTran
 
 	response := []models.ResponseDownloadData{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logrus.Error("SaluteWorker.downloadTranscriptionExecute(): ", err)
+		logrus.Error("Worker.downloadTranscriptionExecute(): ", err)
 		return "", err
 	}
 

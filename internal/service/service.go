@@ -19,14 +19,15 @@ type Auth struct {
 	ExpiresAt   time.Time
 }
 
-type SaluteWorker struct {
-	cfg     *config.Config
-	storage *s.Storage
-	client  *http.Client
-	auth    *Auth
+type Worker struct {
+	cfg          *config.Config
+	storage      *s.Storage
+	client       *http.Client
+	authSalute   *Auth
+	authGigaChat *Auth
 }
 
-func InitWorker(cfg *config.Config, storage *s.Storage) *SaluteWorker {
+func InitWorker(cfg *config.Config, storage *s.Storage) *Worker {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -34,25 +35,27 @@ func InitWorker(cfg *config.Config, storage *s.Storage) *SaluteWorker {
 			},
 		},
 	}
-	sw := &SaluteWorker{
-		cfg:     cfg,
-		storage: storage,
-		client:  client,
-		auth:    &Auth{},
+	w := &Worker{
+		cfg:          cfg,
+		storage:      storage,
+		client:       client,
+		authSalute:   &Auth{},
+		authGigaChat: &Auth{},
 	}
 
-	sw.getToken()
-	return sw
+	w.getTokenSalute()
+	w.getTokenGigaChat()
+	return w
 }
 
-func (w *SaluteWorker) Run(ctx context.Context) {
-	ticker := time.NewTicker(time.Duration(w.cfg.Salute.IntervalTicker) * time.Second)
+func (w *Worker) Run(ctx context.Context) {
+	ticker := time.NewTicker(time.Duration(w.cfg.IntervalTicker) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Info("SaluteWorker: received shutdown signal, stopping...")
+			logrus.Info("Worker: received shutdown signal, stopping...")
 			return
 		case <-ticker.C:
 			// logic
@@ -64,7 +67,7 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 	}
 }
 
-func (w *SaluteWorker) upload() {
+func (w *Worker) upload() {
 	uploadData, err := w.storage.GetVoiceForUpload()
 	if err != nil {
 		if errors.Is(err, models.NoDataForProcessed) {
@@ -92,11 +95,11 @@ func (w *SaluteWorker) upload() {
 	}
 }
 
-func (w *SaluteWorker) recognize() {
+func (w *Worker) recognize() {
 	recognizeData, err := w.storage.GetVoiceForRecognize()
 	if err != nil {
 		//
-		logrus.Error(fmt.Errorf("SaluteWorker.recognize(): %w", err))
+		logrus.Error(fmt.Errorf("Worker.recognize(): %w", err))
 		return
 	}
 	for i := range recognizeData {
@@ -116,11 +119,11 @@ func (w *SaluteWorker) recognize() {
 	}
 }
 
-func (w *SaluteWorker) checkStatus() {
+func (w *Worker) checkStatus() {
 	checkStatusData, err := w.storage.GetVoiceForCheckStatus()
 	if err != nil {
 		//
-		logrus.Error(fmt.Errorf("SaluteWorker.checkStatus(): %w", err))
+		logrus.Error(fmt.Errorf("Worker.checkStatus(): %w", err))
 		return
 	}
 
@@ -145,11 +148,11 @@ func (w *SaluteWorker) checkStatus() {
 	}
 }
 
-func (w *SaluteWorker) downloadTranscription() {
+func (w *Worker) downloadTranscription() {
 	downloadTranscriptionData, err := w.storage.GetVoiceForDownloadTranscription()
 	if err != nil {
 		//
-		logrus.Error(fmt.Errorf("SaluteWorker.downloadTranscription(): %w", err))
+		logrus.Error(fmt.Errorf("Worker.downloadTranscription(): %w", err))
 		return
 	}
 	for i := range downloadTranscriptionData {
