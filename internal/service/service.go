@@ -149,7 +149,7 @@ func (w *SaluteWorker) downloadTranscription() {
 	downloadTranscriptionData, err := w.storage.GetVoiceForDownloadTranscription()
 	if err != nil {
 		//
-		logrus.Error(fmt.Errorf("SaluteWorker.checkStatus(): %w", err))
+		logrus.Error(fmt.Errorf("SaluteWorker.downloadTranscription(): %w", err))
 		return
 	}
 	for i := range downloadTranscriptionData {

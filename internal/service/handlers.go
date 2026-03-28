@@ -160,7 +160,7 @@ func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (s
 	if response.Result.Status != "DONE" {
 		return "", models.VoiceIsProseccing
 	}
-	return response.Result.ID, nil
+	return response.Result.ResponseFileID, nil
 }
 
 func (w *SaluteWorker) downloadTranscriptionExecute(download models.DownloadTranscriptionData) (string, error) {
