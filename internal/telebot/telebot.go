@@ -8,6 +8,7 @@ import (
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
 	s "github.com/SerzhLimon/MeetingSummary/internal/storage"
+	"github.com/sirupsen/logrus"
 	tg "gopkg.in/telebot.v3"
 )
 
@@ -53,18 +54,20 @@ func (b *TeleBot) Route() {
 
 		file, err := b.core.File(&tg.File{FileID: msg.FileID})
 		if err != nil {
-			return c.Send("Ошибка загрузки файла")
+			logrus.Error(err)
+			return c.Send(errSaveVoice)
 		}
-		fileData, err := io.ReadAll(file)
+		voiceBytes, err := io.ReadAll(file)
 		if err != nil {
-			return c.Send("Ошибка чтения файла")
+			logrus.Error(err)
+			return c.Send(errSaveVoice)
 		}
-		fmt.Print(fileData)
-		// err = b.uc.SendToRemoteServer(file)
+		id, err := b.storage.SaveIncommingVoice(voiceBytes)
 		if err != nil {
-			return c.Send("Ошибка отправки на сервер")
+			logrus.Error(err)
+			return c.Send(errSaveVoice)
 		}
 
-		return nil
+		return c.Send(fmt.Sprintf(successSaveVoice, id))
 	})
 }

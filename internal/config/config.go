@@ -16,11 +16,12 @@ type SaluteSpeech struct {
 }
 
 type PostgresConfig struct {
-	Host    string `json:"host"`
-	Port    string `json:"port"`
-	User    string `json:"user"`
-	DBName  string `json:"dbname"`
-	SSLMode string `json:"sslmode"`
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	User     string `json:"user"`
+	DBName   string `json:"dbname"`
+	SSLMode  string `json:"sslmode"`
+	Password string `json:"password"`
 }
 
 type Config struct {
