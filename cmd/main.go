@@ -8,6 +8,7 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	bot := telebot.New(cfg)
+	bot.Route()
 	bot.Start()
 	defer bot.Stop()
 }

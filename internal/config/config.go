@@ -10,17 +10,23 @@ type BotConfig struct {
 	Token string `json:"token"`
 }
 
-// type PostgresConfig struct {
-// 	Host    string `json:"host"`
-// 	Port    string `json:"port"`
-// 	User    string `json:"user"`
-// 	DBName  string `json:"dbname"`
-// 	SSLMode string `json:"sslmode"`
-// }
+type SaluteSpeech struct {
+	ClientSecret string `json:"client_secret"`
+	ClientID     string `json:"client_id"`
+}
+
+type PostgresConfig struct {
+	Host    string `json:"host"`
+	Port    string `json:"port"`
+	User    string `json:"user"`
+	DBName  string `json:"dbname"`
+	SSLMode string `json:"sslmode"`
+}
 
 type Config struct {
 	Bot      BotConfig      `json:"bot"`
-	// Postgres PostgresConfig `json:"postgres"`
+	Postgres PostgresConfig `json:"postgres"`
+	Salute   SaluteSpeech   `json:"salute_speech"`
 }
 
 func LoadConfig() *Config {
