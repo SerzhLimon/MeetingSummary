@@ -10,8 +10,8 @@ func New(db *sql.DB) *Storage {
 	return &Storage{db:db}
 }
 
-func (s *Storage) SaveIncommingVoice(voiceBytes []byte) (int, error) {
+func (s *Storage) SaveIncomingVoice(voiceBytes []byte) (int, error) {
 	var voiceID int
-	err := s.db.QueryRow(string(voiceBytes)).Scan(&voiceID)
+	err := s.db.QueryRow(querySaveIncomingVoice, voiceBytes).Scan(&voiceID)
 	return voiceID, err
 }

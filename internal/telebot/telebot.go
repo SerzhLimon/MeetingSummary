@@ -62,7 +62,7 @@ func (b *TeleBot) Route() {
 			logrus.Error(err)
 			return c.Send(errSaveVoice)
 		}
-		id, err := b.storage.SaveIncommingVoice(voiceBytes)
+		id, err := b.storage.SaveIncomingVoice(voiceBytes)
 		if err != nil {
 			logrus.Error(err)
 			return c.Send(errSaveVoice)
