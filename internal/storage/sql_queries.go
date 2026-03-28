@@ -8,7 +8,7 @@ const (
 	`
 
 	queryGetVoicesForUpload = `
-		SELECT voice_data
+		SELECT id, voice_data
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`
@@ -24,4 +24,15 @@ const (
 		WHERE id = $1
 	`
 
+	queryGetVoicesForRecognize = `
+		SELECT id, request_file_id
+		FROM voice_recognize_req
+		WHERE process_step = $1
+	`
+
+	querySetStatusRecognition = `
+		UPDATE voice_recognize_req 
+		SET process_step = $2, recognize_id = $3
+		WHERE id = $1
+	`
 )

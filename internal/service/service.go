@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -53,6 +54,7 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 		case <-ticker.C:
 			// logic
 			w.upload()
+			w.recognize()
 		}
 	}
 }
@@ -60,6 +62,8 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 func (w *SaluteWorker) upload() {
 	uploadData, err := w.storage.GetVoiceForUpload()
 	if err != nil {
+		//
+		logrus.Error(fmt.Errorf("SaluteWorker.upload(): %w", err))
 		return
 	}
 
@@ -75,6 +79,30 @@ func (w *SaluteWorker) upload() {
 		if err != nil {
 			logrus.Error(err)
 			err = w.storage.SetStatusFail(uploadData[i].VoiceID)
+			//
+		}
+	}
+}
+
+func (w *SaluteWorker) recognize() {
+	recognizeData, err := w.storage.GetVoiceForRecognize()
+	if err != nil {
+		//
+		logrus.Error(fmt.Errorf("SaluteWorker.recognize(): %w", err))
+		return
+	}
+	for i := range recognizeData {
+		recognizeID, err := w.recognizeExecute(recognizeData[i])
+		if err != nil {
+			logrus.Error(err)
+			err = w.storage.SetStatusFail(recognizeData[i].VoiceID)
+			//
+			continue
+		}
+		err = w.storage.SetStatusRecognition(recognizeData[i].VoiceID, recognizeID)
+		if err != nil {
+			logrus.Error(err)
+			err = w.storage.SetStatusFail(recognizeData[i].VoiceID)
 			//
 		}
 	}

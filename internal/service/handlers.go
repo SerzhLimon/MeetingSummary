@@ -66,6 +66,7 @@ func (w *SaluteWorker) uploadExecute(upload models.UploadData) (string, error) {
 	}
 	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
 	req.Header.Set("Content-Type", "audio/ogg")
+
 	resp, err := w.client.Do(req)
 	if err != nil {
 		logrus.Error("SaluteWorker.uploadExecute(): ", err)
@@ -78,16 +79,58 @@ func (w *SaluteWorker) uploadExecute(upload models.UploadData) (string, error) {
 		return "", err
 	}
 
-	var response struct {
-		Result struct {
-			RequestFileID string `json:"request_file_id"`
-		} `json:"result"`
-	}
-
+	response := models.UploadResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		logrus.Error("SaluteWorker.uploadExecute(): ", err)
 		return "", err
 	}
 	
 	return response.Result.RequestFileID, nil
+}
+
+func (w *SaluteWorker) recognizeExecute(recognize models.RecognizeData) (string, error) {
+// must return recognize_id
+	w.getToken()
+	requestBody := map[string]interface{}{
+        "options":         map[string]interface{}{},
+        "model":           "general",
+        "audio_encoding":  "OPUS",
+        "sample_rate":     16000,
+        "channels_count":  1,
+        "request_file_id": recognize.ReqFileID,
+    }
+    
+    jsonBody, err := json.Marshal(requestBody)
+    if err != nil {
+        logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+        return "", err
+    }
+
+	req, err := http.NewRequest("POST", "https://smartspeech.sber.ru/rest/v1/speech:async_recognize", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+    req.Header.Set("Content-Type", "application/json")
+
+	resp, err := w.client.Do(req)
+	if err != nil {
+		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		return "", err
+	}
+
+	response := models.RecognizeResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+        logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+        return "", err
+    }
+	
+	return response.Result.ID, nil
 }

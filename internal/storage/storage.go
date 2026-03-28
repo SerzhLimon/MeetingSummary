@@ -32,7 +32,7 @@ func (s *Storage) GetVoiceForUpload() ([]models.UploadData, error) {
     
     for rows.Next() {
         var uploadData models.UploadData
-        err := rows.Scan(&uploadData.VoiceData)
+        err := rows.Scan(&uploadData.VoiceID, &uploadData.VoiceData)
         if err != nil {
             return nil, err
         }
@@ -46,7 +46,7 @@ func (s *Storage) GetVoiceForUpload() ([]models.UploadData, error) {
     return uploadDataList, nil
 }
 
-func (s *Storage) SetStatusFail(voiceID int) error {
+func (s *Storage) SetStatusFail(voiceID int64) error {
     result, err := s.db.Exec(querySetStatusFail, voiceID, models.Fail)
 
 	if err != nil {
@@ -64,7 +64,37 @@ func (s *Storage) SetStatusFail(voiceID int) error {
     return nil
 }
 
-func (s *Storage) SetStatusUpload(voiceID int, reqFileID string) error {
+func (s *Storage) SetStatusUpload(voiceID int64, reqFileID string) error {
     _, err := s.db.Exec(querySetStatusUpload, voiceID, models.Upload, reqFileID)
+    return err
+}
+
+func (s *Storage) GetVoiceForRecognize() ([]models.RecognizeData, error) {
+    rows, err := s.db.Query(queryGetVoicesForRecognize, models.Upload)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var recognizeDataList []models.RecognizeData
+    
+    for rows.Next() {
+        var recognizeData models.RecognizeData
+        err := rows.Scan(&recognizeData.VoiceID, &recognizeData.ReqFileID)
+        if err != nil {
+            return nil, err
+        }
+        recognizeDataList = append(recognizeDataList, recognizeData)
+    }
+    
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+    
+    return recognizeDataList, nil
+}
+
+func (s *Storage) SetStatusRecognition(voiceID int64, recognizeID string) error {
+    _, err := s.db.Exec(querySetStatusRecognition, voiceID, models.Recognition, recognizeID)
     return err
 }
