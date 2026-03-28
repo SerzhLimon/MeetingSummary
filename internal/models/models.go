@@ -16,6 +16,7 @@ const (
 	Recognition = "RECOGNITION"
 	Wait        = "WAIT"
 	Download    = "DOWNLOAD"
+	Success     = "Success"
 )
 
 type UploadData struct {
@@ -36,6 +37,11 @@ type CheckStatusData struct {
 type DownloadTranscriptionData struct {
 	VoiceID    int64
 	RespFileID string
+}
+
+type CreateSummaryData struct {
+	VoiceID int64
+	Text    string
 }
 
 type resultUpload struct {
@@ -131,4 +137,37 @@ type ResponseDownloadData struct {
 	EouReason           string         `json:"eou_reason"`
 	Insight             string         `json:"insight"`
 	PersonIdentity      personIdentity `json:"person_identity"`
+}
+
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type GigaChatRequest struct {
+	Model             string    `json:"model"`
+	Messages          []Message `json:"messages"`
+	Stream            bool      `json:"stream"`
+	RepetitionPenalty int       `json:"repetition_penalty"`
+}
+
+type choicesResponse struct {
+	FinishReason string  `json:"finish_reason"`
+	Index        int     `json:"index"`
+	Message      Message `json:"message"`
+}
+
+type usageResponse struct {
+	CompletionTokens int `json:"completion_tokens"`
+	PromptTokens     int `json:"prompt_tokens"`
+	SystemTokens     int `json:"system_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+type GigaChatResponse struct {
+	Choices []choicesResponse `json:"choices"`
+	Created int64             `json:"created"`
+	Model   string            `json:"model"`
+	Object  string            `json:"object"`
+	Usage   usageResponse     `json:"usage"`
 }

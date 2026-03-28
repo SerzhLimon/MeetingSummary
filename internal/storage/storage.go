@@ -160,3 +160,28 @@ func (s *Storage) SetStatusDownload(voiceID int64, text string) error {
 	_, err := s.db.Exec(querySetStatusDownload, voiceID, models.Download, text)
 	return err
 }
+
+func (s *Storage) GetVoiceForCreateSummary() ([]models.CreateSummaryData, error) {
+	rows, err := s.db.Query(queryGetVoiceForCreateSummary, models.Download)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var createSummaryList []models.CreateSummaryData
+
+	for rows.Next() {
+		var createSummaryData models.CreateSummaryData
+		err := rows.Scan(&createSummaryData.VoiceID, &createSummaryData.Text)
+		if err != nil {
+			return nil, err
+		}
+		createSummaryList = append(createSummaryList, createSummaryData)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return createSummaryList, nil
+}

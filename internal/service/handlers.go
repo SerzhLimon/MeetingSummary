@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/models"
-	"github.com/sirupsen/logrus"
 )
 
 func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
@@ -17,7 +16,6 @@ func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 
 	req, err := http.NewRequest("POST", "https://smartspeech.sber.ru/rest/v1/data:upload", reqBody)
 	if err != nil {
-		logrus.Error("Worker.uploadExecute(): ", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
@@ -25,7 +23,6 @@ func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("Worker.uploadExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -36,7 +33,6 @@ func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 
 	response := models.UploadResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logrus.Error("Worker.uploadExecute(): ", err)
 		return "", err
 	}
 
@@ -92,14 +88,12 @@ func (w *Worker) checkStatusExecute(checkStatus models.CheckStatusData) (string,
 	url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/task:get?id=%s", checkStatus.RecognizeID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logrus.Error("Worker.checkStatusExecute(): ", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("Worker.checkStatusExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -110,7 +104,6 @@ func (w *Worker) checkStatusExecute(checkStatus models.CheckStatusData) (string,
 
 	response := models.ResponseCheckStatus{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logrus.Error("Worker.checkStatusExecute(): ", err)
 		return "", err
 	}
 	if response.Result.Status != "DONE" {
@@ -125,14 +118,12 @@ func (w *Worker) downloadTranscriptionExecute(download models.DownloadTranscript
 	url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/data:download?response_file_id=%s", download.RespFileID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		logrus.Error("Worker.downloadTranscriptionExecute(): ", err)
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logrus.Error("Worker.downloadTranscriptionExecute(): ", err)
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -143,7 +134,6 @@ func (w *Worker) downloadTranscriptionExecute(download models.DownloadTranscript
 
 	response := []models.ResponseDownloadData{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		logrus.Error("Worker.downloadTranscriptionExecute(): ", err)
 		return "", err
 	}
 
@@ -162,4 +152,57 @@ func (w *Worker) downloadTranscriptionExecute(download models.DownloadTranscript
 	}
 
 	return text, nil
+}
+
+func (w *Worker) createSummaryExecute(summaryData models.CreateSummaryData) (string, error) {
+
+	requestBody := models.GigaChatRequest{
+		Model:             "GigaChat",
+		Stream:            false,
+		RepetitionPenalty: 1,
+		Messages: []models.Message{
+			{
+				Role:    "user",
+				Content: fmt.Sprintf("сделай краткую выжимку из текста: %s", summaryData.Text),
+			},
+		},
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", "https://gigachat.devices.sberbank.ru/api/v1/chat/completions", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+w.authGigaChat.AccessToken)
+
+	resp, err := w.client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("create summary handler return status %d", resp.StatusCode)
+	}
+
+	response := models.GigaChatResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return "", err
+	}
+	if len(response.Choices) < 1 {
+		return "", fmt.Errorf("create summary handler return status empty response")
+	}
+	var summary string
+	for i := range response.Choices {
+		summary += response.Choices[i].Message.Content
+	}
+
+	return summary, nil
 }

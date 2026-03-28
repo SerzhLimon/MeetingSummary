@@ -60,4 +60,10 @@ const (
 		SET process_step = $2, transcription = $3
 		WHERE id = $1
 	`
+
+	queryGetVoiceForCreateSummary = `
+		SELECT id, transcription
+		FROM voice_recognize_req
+		WHERE process_step = $1
+	`
 )

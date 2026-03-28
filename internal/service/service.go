@@ -63,6 +63,7 @@ func (w *Worker) Run(ctx context.Context) {
 			w.recognize()
 			w.checkStatus()
 			w.downloadTranscription()
+			w.createSummary()
 		}
 	}
 }
@@ -172,5 +173,30 @@ func (w *Worker) downloadTranscription() {
 			continue
 		}
 		logrus.Infof("successfull download: %d", downloadTranscriptionData[i].VoiceID)
+	}
+}
+
+func (w *Worker) createSummary() {
+	createSumData, err := w.storage.GetVoiceForCreateSummary()
+	if err != nil {
+		//
+		logrus.Error(fmt.Errorf("Worker.downloadTranscription(): %w", err))
+		return
+	}
+	for i := range createSumData {
+		summary, err := w.createSummaryExecute(createSumData[i])
+		if err != nil {
+			logrus.Error(err)
+			err = w.storage.SetStatusFail(createSumData[i].VoiceID)
+			//
+			continue
+		}
+		// err = w.storage.SetStatusDownload(downloadTranscriptionData[i].VoiceID, text)
+		// if err != nil {
+		// 	logrus.Error(err)
+		// 	continue
+		// }
+		logrus.Infof("successfull create summary: %d", createSumData[i].VoiceID)
+		logrus.Info("DONE--------\n",summary)
 	}
 }
