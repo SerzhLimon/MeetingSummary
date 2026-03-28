@@ -67,8 +67,11 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 func (w *SaluteWorker) upload() {
 	uploadData, err := w.storage.GetVoiceForUpload()
 	if err != nil {
-		//
-		logrus.Error(fmt.Errorf("SaluteWorker.upload(): %w", err))
+		if errors.Is(err, models.NoDataForProcessed) {
+			logrus.Warn(err)
+			return
+		}
+		logrus.Error(err)
 		return
 	}
 
@@ -83,6 +86,8 @@ func (w *SaluteWorker) upload() {
 		err = w.storage.SetStatusUpload(uploadData[i].VoiceID, reqFileID)
 		if err != nil {
 			logrus.Error(err)
+		} else {
+			logrus.Infof("success upload: %d", uploadData[i].VoiceID)
 		}
 	}
 }
@@ -105,6 +110,8 @@ func (w *SaluteWorker) recognize() {
 		err = w.storage.SetStatusRecognition(recognizeData[i].VoiceID, recognizeID)
 		if err != nil {
 			logrus.Error(err)
+		} else {
+			logrus.Infof("success recognize: %d", recognizeData[i].VoiceID)
 		}
 	}
 }
@@ -121,6 +128,7 @@ func (w *SaluteWorker) checkStatus() {
 		respFileID, err := w.checkStatusExecute(checkStatusData[i])
 		if err != nil {
 			if errors.Is(err, models.VoiceIsProseccing) {
+				logrus.Infof("status not DONE yet: %d", checkStatusData[i].VoiceID)
 				continue
 			}
 			logrus.Error(err)
@@ -131,6 +139,8 @@ func (w *SaluteWorker) checkStatus() {
 		err = w.storage.SetStatusWait(checkStatusData[i].VoiceID, respFileID)
 		if err != nil {
 			logrus.Error(err)
+		} else {
+			logrus.Infof("success check status: %d", checkStatusData[i].VoiceID)
 		}
 	}
 }

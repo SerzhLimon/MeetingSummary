@@ -58,7 +58,7 @@ func main() {
 	
 	cancel()
 	
-	shutdownTimeout := 5 * time.Second
+	shutdownTimeout := 2 * time.Second
 	time.Sleep(shutdownTimeout)
 	
 	bot.Stop()

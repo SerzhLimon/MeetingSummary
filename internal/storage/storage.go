@@ -42,7 +42,9 @@ func (s *Storage) GetVoiceForUpload() ([]models.UploadData, error) {
     if err = rows.Err(); err != nil {
         return nil, err
     }
-    
+    if len(uploadDataList) < 1 {
+        return nil, models.NoDataForProcessed
+    }
     return uploadDataList, nil
 }
 
