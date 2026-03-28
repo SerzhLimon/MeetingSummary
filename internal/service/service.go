@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
+	"github.com/SerzhLimon/MeetingSummary/internal/models"
 	s "github.com/SerzhLimon/MeetingSummary/internal/storage"
 	"github.com/sirupsen/logrus"
 )
@@ -55,6 +57,7 @@ func (w *SaluteWorker) Run(ctx context.Context) {
 			// logic
 			w.upload()
 			w.recognize()
+			w.checkStatus()
 		}
 	}
 }
@@ -78,8 +81,6 @@ func (w *SaluteWorker) upload() {
 		err = w.storage.SetStatusUpload(uploadData[i].VoiceID, reqFileID)
 		if err != nil {
 			logrus.Error(err)
-			err = w.storage.SetStatusFail(uploadData[i].VoiceID)
-			//
 		}
 	}
 }
@@ -102,8 +103,32 @@ func (w *SaluteWorker) recognize() {
 		err = w.storage.SetStatusRecognition(recognizeData[i].VoiceID, recognizeID)
 		if err != nil {
 			logrus.Error(err)
-			err = w.storage.SetStatusFail(recognizeData[i].VoiceID)
+		}
+	}
+}
+
+func (w *SaluteWorker) checkStatus() {
+	checkStatusData, err := w.storage.GetVoiceForCheckStatus()
+	if err != nil {
+		//
+		logrus.Error(fmt.Errorf("SaluteWorker.checkStatus(): %w", err))
+		return
+	}
+
+	for i := range checkStatusData {
+		respFileID, err := w.checkStatusExecute(checkStatusData[i])
+		if err != nil {
+			if errors.Is(err, models.VoiceIsProseccing) {
+				continue
+			}
+			logrus.Error(err)
+			err = w.storage.SetStatusFail(checkStatusData[i].VoiceID)
 			//
+			continue
+		}
+		err = w.storage.SetStatusWait(checkStatusData[i].VoiceID, respFileID)
+		if err != nil {
+			logrus.Error(err)
 		}
 	}
 }

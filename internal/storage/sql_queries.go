@@ -35,4 +35,16 @@ const (
 		SET process_step = $2, recognize_id = $3
 		WHERE id = $1
 	`
+
+	queryGetVoiceForCheckStatus = `
+		SELECT id, recognize_id
+		FROM voice_recognize_req
+		WHERE process_step = $1
+	`
+
+	querySetStatusWait = `
+		UPDATE voice_recognize_req 
+		SET process_step = $2, response_file_id = $3
+		WHERE id = $1
+	`
 )

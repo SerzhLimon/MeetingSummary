@@ -131,6 +131,40 @@ func (w *SaluteWorker) recognizeExecute(recognize models.RecognizeData) (string,
         logrus.Error("SaluteWorker.recognizeExecute(): ", err)
         return "", err
     }
-	
+
+	return response.Result.ID, nil
+}
+
+func (w *SaluteWorker) checkStatusExecute(checkStatus models.CheckStatusData) (string, error) {
+	w.getToken()
+
+	url := fmt.Sprintf("https://smartspeech.sber.ru/rest/v1/task:get?id=%s", checkStatus.RecognizeID)
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		logrus.Error("SaluteWorker.checkStatusExecute(): ", err)
+		return "", err
+	}
+	req.Header.Set("Authorization", "Bearer "+w.auth.AccessToken)
+
+	resp, err := w.client.Do(req)
+	if err != nil {
+		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+		return "", err
+	}
+
+	response := models.ResponseCheckStatus{}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+        logrus.Error("SaluteWorker.recognizeExecute(): ", err)
+        return "", err
+    }
+	if response.Result.Status != "DONE" {
+		return "", models.VoiceIsProseccing
+	}
 	return response.Result.ID, nil
 }

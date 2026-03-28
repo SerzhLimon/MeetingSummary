@@ -98,3 +98,33 @@ func (s *Storage) SetStatusRecognition(voiceID int64, recognizeID string) error 
     _, err := s.db.Exec(querySetStatusRecognition, voiceID, models.Recognition, recognizeID)
     return err
 }
+
+func (s *Storage) GetVoiceForCheckStatus() ([]models.CheckStatusData, error) {
+    rows, err := s.db.Query(queryGetVoiceForCheckStatus, models.Recognition)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var checkStatusList []models.CheckStatusData
+    
+    for rows.Next() {
+        var checkStatusData models.CheckStatusData
+        err := rows.Scan(&checkStatusData.VoiceID, &checkStatusData.RecognizeID)
+        if err != nil {
+            return nil, err
+        }
+        checkStatusList = append(checkStatusList, checkStatusData)
+    }
+    
+    if err = rows.Err(); err != nil {
+        return nil, err
+    }
+    
+    return checkStatusList, nil
+}
+
+func (s *Storage) SetStatusWait(voiceID int64, respFileID string) error {
+    _, err := s.db.Exec(querySetStatusRecognition, voiceID, models.Wait, respFileID)
+    return err
+}
