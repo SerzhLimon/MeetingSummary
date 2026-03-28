@@ -2,20 +2,21 @@ package telebot
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
+	s "github.com/SerzhLimon/MeetingSummary/internal/storage"
 	tg "gopkg.in/telebot.v3"
 )
 
 type TeleBot struct {
-	core *tg.Bot
-	// uc   *s.Service
-
+	core    *tg.Bot
+	storage *s.Storage
 }
 
-func New(cfg *config.Config) *TeleBot {
+func New(cfg *config.Config, storage *s.Storage) *TeleBot {
 	settings := tg.Settings{
 		Token:  cfg.Bot.Token,
 		Poller: &tg.LongPoller{Timeout: 3 * time.Second},
@@ -27,10 +28,10 @@ func New(cfg *config.Config) *TeleBot {
 		log.Fatal(err)
 		return nil
 	}
-	// uc := s.New()
+
 	return &TeleBot{
-		core: bot,
-		// uc:   uc,
+		core:    bot,
+		storage: storage,
 	}
 }
 
@@ -54,7 +55,11 @@ func (b *TeleBot) Route() {
 		if err != nil {
 			return c.Send("Ошибка загрузки файла")
 		}
-		fmt.Print(file)
+		fileData, err := io.ReadAll(file)
+		if err != nil {
+			return c.Send("Ошибка чтения файла")
+		}
+		fmt.Print(fileData)
 		// err = b.uc.SendToRemoteServer(file)
 		if err != nil {
 			return c.Send("Ошибка отправки на сервер")

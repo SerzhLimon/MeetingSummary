@@ -2,7 +2,6 @@ package service
 
 import (
 	"crypto/tls"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
+	s "github.com/SerzhLimon/MeetingSummary/internal/storage"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -23,12 +23,12 @@ type Auth struct {
 
 type SaluteWorker struct {
 	cfg     *config.Config
-	storage *sql.DB
+	storage *s.Storage
 	client  *http.Client
 	auth    *Auth
 }
 
-func InitWorker(cfg *config.Config, db *sql.DB) *SaluteWorker {
+func InitWorker(cfg *config.Config, storage *s.Storage) *SaluteWorker {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -36,14 +36,18 @@ func InitWorker(cfg *config.Config, db *sql.DB) *SaluteWorker {
 			},
 		},
 	}
-	return &SaluteWorker{
+	sw := &SaluteWorker{
 		cfg:     cfg,
-		storage: db,
+		storage: storage,
 		client:  client,
+		auth:    &Auth{},
 	}
+
+	sw.getToken()
+	return sw
 }
 
-func (w *SaluteWorker) Auth() {
+func (w *SaluteWorker) getToken() {
 	if w.auth.ExpiresAt.Before(time.Now()) {
 		return
 	}
