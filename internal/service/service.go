@@ -75,7 +75,7 @@ func (w *Worker) upload() {
 			logrus.Warn(err)
 			return
 		}
-		logrus.Error(err)
+		logrus.Error(fmt.Errorf("Worker.upload(): %w", err))
 		return
 	}
 
