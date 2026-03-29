@@ -191,11 +191,11 @@ func (w *Worker) createSummary() {
 			//
 			continue
 		}
-		// err = w.storage.SetStatusDownload(downloadTranscriptionData[i].VoiceID, text)
-		// if err != nil {
-		// 	logrus.Error(err)
-		// 	continue
-		// }
+		err = w.storage.SetStatusSuccess(createSumData[i].VoiceID, summary)
+		if err != nil {
+			logrus.Error(err)
+			continue
+		}
 		logrus.Infof("successfull create summary: %d", createSumData[i].VoiceID)
 		logrus.Info("DONE--------\n",summary)
 	}

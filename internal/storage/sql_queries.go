@@ -66,4 +66,10 @@ const (
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`
+
+	querySetStatusSuccess = `
+		UPDATE voice_recognize_req
+		SET process_step = $2, summary = $3
+		WHERE id = $1
+	`
 )

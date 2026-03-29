@@ -185,3 +185,8 @@ func (s *Storage) GetVoiceForCreateSummary() ([]models.CreateSummaryData, error)
 
 	return createSummaryList, nil
 }
+
+func (s *Storage) SetStatusSuccess(voiceID int64, summary string) error {
+	_, err := s.db.Exec(querySetStatusSuccess, voiceID, models.Success, summary)
+	return err
+}

@@ -14,7 +14,8 @@ const (
 			request_file_id VARCHAR, -- ответ от ручки upload
 			recognize_id VARCHAR, -- ответ от ручки recognize
 			response_file_id VARCHAR, -- ответ от ручки status
-			transcription TEXT -- ответ от ручки download (расшифрованный текст)
+			transcription TEXT, -- ответ от ручки download (расшифрованный текст)
+			summary TEXT -- выжимка гигачата
 		);
 	`
 

@@ -16,7 +16,7 @@ const (
 	Recognition = "RECOGNITION"
 	Wait        = "WAIT"
 	Download    = "DOWNLOAD"
-	Success     = "Success"
+	Success     = "SUCCESS"
 )
 
 type UploadData struct {
