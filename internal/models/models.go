@@ -9,6 +9,9 @@ func (e Err) Error() string {
 const (
 	VoiceIsProseccing  Err = "meeting processed yet"
 	NoDataForProcessed Err = "no voices for processed"
+	FailSummaryProcess Err = "Не удалось обработать встречу. ID: %d. Повторите отправку"
+	SuccesSummaryProcess = "Встреча успешно сохранена! Вы можете получить ее по ID: %d"
+
 
 	Fail        = "FAIL"
 	Begin       = "BEGIN"
@@ -19,28 +22,38 @@ const (
 	Success     = "SUCCESS"
 )
 
+type UserMessage struct {
+	ChatID  int64
+	Message string
+}
+
 type UploadData struct {
 	VoiceID   int64
+	ChatID    int64
 	VoiceData []byte
 }
 
 type RecognizeData struct {
 	VoiceID   int64
+	ChatID    int64
 	ReqFileID string
 }
 
 type CheckStatusData struct {
 	VoiceID     int64
+	ChatID      int64
 	RecognizeID string
 }
 
 type DownloadTranscriptionData struct {
 	VoiceID    int64
+	ChatID     int64
 	RespFileID string
 }
 
 type CreateSummaryData struct {
 	VoiceID int64
+	ChatID  int64
 	Text    string
 }
 

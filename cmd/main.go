@@ -47,7 +47,7 @@ func main() {
 	
 	go func() {
 		logrus.Info("Starting bot...")
-		bot.Start()
+		bot.Start(ctx)
 	}()
 	
 	// Ожидаем сигналы завершения

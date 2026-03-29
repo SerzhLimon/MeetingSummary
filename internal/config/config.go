@@ -47,6 +47,5 @@ func LoadConfig() *Config {
 	if err = json.Unmarshal(data, &config); err != nil {
 		logrus.Fatalf("cannot load bot config %v", err)
 	}
-	logrus.Info("config create success")
 	return &config
 }

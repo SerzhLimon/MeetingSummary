@@ -25,6 +25,7 @@ type Worker struct {
 	client       *http.Client
 	authSalute   *Auth
 	authGigaChat *Auth
+	MessageChannel chan models.UserMessage
 }
 
 func InitWorker(cfg *config.Config, storage *s.Storage) *Worker {
@@ -41,6 +42,7 @@ func InitWorker(cfg *config.Config, storage *s.Storage) *Worker {
 		client:       client,
 		authSalute:   &Auth{},
 		authGigaChat: &Auth{},
+		MessageChannel: make(chan models.UserMessage, 10),
 	}
 
 	w.getTokenSalute()
@@ -51,7 +53,7 @@ func InitWorker(cfg *config.Config, storage *s.Storage) *Worker {
 func (w *Worker) Run(ctx context.Context) {
 	ticker := time.NewTicker(time.Duration(w.cfg.IntervalTicker) * time.Second)
 	defer ticker.Stop()
-
+	defer close(w.MessageChannel)
 	for {
 		select {
 		case <-ctx.Done():
@@ -68,6 +70,10 @@ func (w *Worker) Run(ctx context.Context) {
 	}
 }
 
+func (w *Worker) SaveIncomingVoice(voiceBytes []byte, chatID int64) (int, error) {
+	return w.storage.SaveIncomingVoice(voiceBytes, chatID)
+}
+
 func (w *Worker) upload() {
 	uploadData, err := w.storage.GetVoiceForUpload()
 	if err != nil {
@@ -76,6 +82,13 @@ func (w *Worker) upload() {
 			return
 		}
 		logrus.Error(fmt.Errorf("Worker.upload(): %w", err))
+		// for i := range uploadData {
+		// 	w.MessageChannel <- models.UserMessage{
+		// 		ChatID: uploadData[i].ChatID,
+		// 		Message: fmt.Sprintf(models.FailSummaryProcess.Error(), uploadData[i].VoiceID),
+		// 	}
+		// }
+		
 		return
 	}
 
@@ -83,15 +96,25 @@ func (w *Worker) upload() {
 		reqFileID, err := w.uploadExecute(uploadData[i])
 		if err != nil {
 			logrus.Error(err)
+
+			// w.MessageChannel <- models.UserMessage{
+			// 	ChatID: uploadData[i].ChatID,
+			// 	Message: fmt.Sprintf(models.FailSummaryProcess.Error(), uploadData[i].VoiceID),
+			// }
+
 			err = w.storage.SetStatusFail(uploadData[i].VoiceID)
-			//
 			continue
 		}
 		err = w.storage.SetStatusUpload(uploadData[i].VoiceID, reqFileID)
 		if err != nil {
 			logrus.Error(err)
+
+			w.MessageChannel <- models.UserMessage{
+				ChatID: uploadData[i].ChatID,
+				Message: fmt.Sprintf(models.FailSummaryProcess.Error(), uploadData[i].VoiceID),
+			}
 		} else {
-			logrus.Infof("success upload: %d", uploadData[i].VoiceID)
+			logrus.Infof("success upload: %d, %d", uploadData[i].VoiceID, uploadData[i].ChatID)
 		}
 	}
 }
@@ -196,7 +219,17 @@ func (w *Worker) createSummary() {
 			logrus.Error(err)
 			continue
 		}
-		logrus.Infof("successfull create summary: %d", createSumData[i].VoiceID)
-		logrus.Info("DONE--------\n",summary)
+		go w.sendMsgSuccess(createSumData[i].ChatID,createSumData[i].VoiceID)
+
+		logrus.Infof("successfull create summary: %d %d", createSumData[i].VoiceID, createSumData[i].ChatID)
 	}
+}
+
+func (w *Worker) sendMsgSuccess(chatID, voiceID int64) {
+	logrus.Warn("sendMsgSuccess")
+	w.MessageChannel <- models.UserMessage{
+		ChatID: chatID,
+		Message: fmt.Sprintf(models.SuccesSummaryProcess, voiceID),
+	}
+	logrus.Warn("sendMsgSuccess1")
 }

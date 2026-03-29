@@ -15,9 +15,9 @@ func New(db *sql.DB) *Storage {
 	return &Storage{db: db}
 }
 
-func (s *Storage) SaveIncomingVoice(voiceBytes []byte) (int, error) {
+func (s *Storage) SaveIncomingVoice(voiceBytes []byte, chatID int64) (int, error) {
 	var voiceID int
-	err := s.db.QueryRow(querySaveIncomingVoice, voiceBytes, models.Begin).Scan(&voiceID)
+	err := s.db.QueryRow(querySaveIncomingVoice, voiceBytes, chatID, models.Begin).Scan(&voiceID)
 	return voiceID, err
 }
 
@@ -32,7 +32,7 @@ func (s *Storage) GetVoiceForUpload() ([]models.UploadData, error) {
 
 	for rows.Next() {
 		var uploadData models.UploadData
-		err := rows.Scan(&uploadData.VoiceID, &uploadData.VoiceData)
+		err := rows.Scan(&uploadData.VoiceID, &uploadData.ChatID, &uploadData.VoiceData)
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func (s *Storage) GetVoiceForRecognize() ([]models.RecognizeData, error) {
 
 	for rows.Next() {
 		var recognizeData models.RecognizeData
-		err := rows.Scan(&recognizeData.VoiceID, &recognizeData.ReqFileID)
+		err := rows.Scan(&recognizeData.VoiceID, &recognizeData.ChatID, &recognizeData.ReqFileID)
 		if err != nil {
 			return nil, err
 		}
@@ -112,7 +112,7 @@ func (s *Storage) GetVoiceForCheckStatus() ([]models.CheckStatusData, error) {
 
 	for rows.Next() {
 		var checkStatusData models.CheckStatusData
-		err := rows.Scan(&checkStatusData.VoiceID, &checkStatusData.RecognizeID)
+		err := rows.Scan(&checkStatusData.VoiceID, &checkStatusData.ChatID, &checkStatusData.RecognizeID)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +142,7 @@ func (s *Storage) GetVoiceForDownloadTranscription() ([]models.DownloadTranscrip
 
 	for rows.Next() {
 		var downloadTranscription models.DownloadTranscriptionData
-		err := rows.Scan(&downloadTranscription.VoiceID, &downloadTranscription.RespFileID)
+		err := rows.Scan(&downloadTranscription.VoiceID, &downloadTranscription.ChatID, &downloadTranscription.RespFileID)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +172,7 @@ func (s *Storage) GetVoiceForCreateSummary() ([]models.CreateSummaryData, error)
 
 	for rows.Next() {
 		var createSummaryData models.CreateSummaryData
-		err := rows.Scan(&createSummaryData.VoiceID, &createSummaryData.Text)
+		err := rows.Scan(&createSummaryData.VoiceID, &createSummaryData.ChatID ,&createSummaryData.Text)
 		if err != nil {
 			return nil, err
 		}

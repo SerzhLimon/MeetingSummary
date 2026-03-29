@@ -6,31 +6,48 @@ import (
 )
 
 func Up(db *sql.DB) error {
-	if db == nil {
-		return fmt.Errorf("db not init")
-	}
+    if db == nil {
+        return fmt.Errorf("db not init")
+    }
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
+    tx, err := db.Begin()
+    if err != nil {
+        return err
+    }
 
-	if _, err := tx.Exec(createEnum); err != nil {
-		tx.Rollback()
-		return err
-	}
+    // Проверяем, существует ли тип 'status'
+    var typeExists bool
+    err = tx.QueryRow(`
+        SELECT EXISTS (
+            SELECT 1
+            FROM pg_type
+            WHERE typname = 'status'
+        )
+    `).Scan(&typeExists)
 
-	if _, err := tx.Exec(createTable); err != nil {
-		tx.Rollback()
-		return err
-	}
+    if err != nil {
+        tx.Rollback()
+        return err
+    }
 
-	if err = tx.Commit(); err != nil {
-		tx.Rollback()
-		return err
-	}
+    if !typeExists {
+        if _, err := tx.Exec(createEnum); err != nil {
+            tx.Rollback()
+            return err
+        }
+    }
 
-	return nil
+    if _, err := tx.Exec(createTable); err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    if err = tx.Commit(); err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    return nil
 }
 
 func Down(db *sql.DB) error {

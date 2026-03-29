@@ -2,13 +2,13 @@ package storage
 
 const (
 	querySaveIncomingVoice = `
-		INSERT INTO voice_recognize_req (voice_data, process_step) 
-        VALUES ($1, $2)
+		INSERT INTO voice_recognize_req (voice_data, chat_id, process_step) 
+        VALUES ($1, $2, $3)
 		RETURNING id
 	`
 
 	queryGetVoicesForUpload = `
-		SELECT id, voice_data
+		SELECT id, chat_id, voice_data
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`
@@ -26,7 +26,7 @@ const (
 	`
 
 	queryGetVoicesForRecognize = `
-		SELECT id, request_file_id
+		SELECT id, chat_id, request_file_id
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`
@@ -38,7 +38,7 @@ const (
 	`
 
 	queryGetVoiceForCheckStatus = `
-		SELECT id, recognize_id
+		SELECT id, chat_id, recognize_id
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`
@@ -50,7 +50,7 @@ const (
 	`
 
 	queryGetVoiceForDownloadTranscription = `
-		SELECT id, response_file_id
+		SELECT id, chat_id, response_file_id
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`
@@ -62,7 +62,7 @@ const (
 	`
 
 	queryGetVoiceForCreateSummary = `
-		SELECT id, transcription
+		SELECT id, chat_id, transcription
 		FROM voice_recognize_req
 		WHERE process_step = $1
 	`

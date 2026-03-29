@@ -1,21 +1,24 @@
 package telebot
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
+	"github.com/SerzhLimon/MeetingSummary/internal/service"
 	s "github.com/SerzhLimon/MeetingSummary/internal/storage"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/telebot.v3"
 	tg "gopkg.in/telebot.v3"
 )
 
 type TeleBot struct {
-	core    *tg.Bot
-	storage *s.Storage
-	stopCh  chan struct{}
+	core   *tg.Bot
+	worker *service.Worker
+	stopCh chan struct{}
 }
 
 func New(cfg *config.Config, storage *s.Storage) *TeleBot {
@@ -31,14 +34,28 @@ func New(cfg *config.Config, storage *s.Storage) *TeleBot {
 		return nil
 	}
 
+	w := service.InitWorker(cfg, storage)
 	return &TeleBot{
-		core:    bot,
-		storage: storage,
-		stopCh:  make(chan struct{}),
+		core:   bot,
+		worker: w,
+		stopCh: make(chan struct{}),
 	}
 }
 
-func (b *TeleBot) Start() {
+func (b *TeleBot) Start(ctx context.Context) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				logrus.Info("TeleBot: received shutdown signal, stopping...")
+				return
+			case m := <-b.worker.MessageChannel:
+				logrus.Warn("SEND")
+				b.core.Send(&telebot.Chat{ID: m.ChatID}, m.Message)
+			}
+		}
+	}()
+
 	go func() {
 		b.core.Start()
 		close(b.stopCh)
@@ -67,12 +84,13 @@ func (b *TeleBot) Route() {
 			logrus.Error(err)
 			return c.Send(errSaveVoice)
 		}
-		id, err := b.storage.SaveIncomingVoice(voiceBytes)
+
+		id, err := b.worker.SaveIncomingVoice(voiceBytes, c.Chat().ID)
 		if err != nil {
 			logrus.Error(err)
 			return c.Send(errSaveVoice)
 		}
-		
+
 		return c.Send(fmt.Sprintf(successSaveVoice, id))
 	})
 }
