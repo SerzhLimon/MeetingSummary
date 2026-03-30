@@ -163,7 +163,7 @@ func (w *Worker) createSummaryExecute(summaryData models.CreateSummaryData) (str
 		Messages: []models.Message{
 			{
 				Role:    "user",
-				Content: fmt.Sprintf("сделай краткую выжимку из текста: %s", summaryData.Text),
+				Content: fmt.Sprintf("сделай краткую выжимку из текста: %s\n результат должен быть информативным и без лишней воды", summaryData.Text),
 			},
 		},
 	}
