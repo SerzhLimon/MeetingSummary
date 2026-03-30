@@ -9,7 +9,6 @@ import (
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
 	"github.com/SerzhLimon/MeetingSummary/internal/config/db"
-	"github.com/SerzhLimon/MeetingSummary/internal/service"
 	"github.com/SerzhLimon/MeetingSummary/internal/storage"
 	"github.com/SerzhLimon/MeetingSummary/internal/telebot"
 	"github.com/SerzhLimon/MeetingSummary/migrations"
@@ -24,7 +23,7 @@ func main() {
 	if err != nil {
 		logrus.Fatalln(err)
 	}
-	
+
 	err = migrations.Up(dbClient)
 	if err != nil {
 		logrus.Fatalln(err)
@@ -35,33 +34,28 @@ func main() {
 	}()
 	storage := storage.New(dbClient)
 
-	// Создаем контекст с отменой
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	saluteWorker := service.InitWorker(cfg, storage)
-	go saluteWorker.Run(ctx)
-
 	bot := telebot.New(cfg, storage)
 	bot.Route()
-	
+	go bot.RunWorker(ctx)
+
 	go func() {
 		logrus.Info("Starting bot...")
 		bot.Start(ctx)
 	}()
-	
-	// Ожидаем сигналы завершения
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	logrus.Info("Shutting down gracefully...")
-	
+
 	cancel()
-	
+
 	shutdownTimeout := 2 * time.Second
 	time.Sleep(shutdownTimeout)
-	
+
 	bot.Stop()
-	
 	logrus.Info("Shutdown completed")
 }

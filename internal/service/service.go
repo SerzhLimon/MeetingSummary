@@ -42,7 +42,7 @@ func InitWorker(cfg *config.Config, storage *s.Storage) *Worker {
 		client:       client,
 		authSalute:   &Auth{},
 		authGigaChat: &Auth{},
-		MessageChannel: make(chan models.UserMessage, 10),
+		MessageChannel: make(chan models.UserMessage),
 	}
 
 	w.getTokenSalute()
@@ -222,14 +222,13 @@ func (w *Worker) createSummary() {
 		go w.sendMsgSuccess(createSumData[i].ChatID,createSumData[i].VoiceID)
 
 		logrus.Infof("successfull create summary: %d %d", createSumData[i].VoiceID, createSumData[i].ChatID)
+		logrus.Infof("successfull create summary: %s", summary)
 	}
 }
 
 func (w *Worker) sendMsgSuccess(chatID, voiceID int64) {
-	logrus.Warn("sendMsgSuccess")
 	w.MessageChannel <- models.UserMessage{
 		ChatID: chatID,
 		Message: fmt.Sprintf(models.SuccesSummaryProcess, voiceID),
 	}
-	logrus.Warn("sendMsgSuccess1")
 }

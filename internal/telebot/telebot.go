@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
+	"github.com/SerzhLimon/MeetingSummary/internal/models"
 	"github.com/SerzhLimon/MeetingSummary/internal/service"
 	s "github.com/SerzhLimon/MeetingSummary/internal/storage"
 	"github.com/sirupsen/logrus"
@@ -27,7 +28,6 @@ func New(cfg *config.Config, storage *s.Storage) *TeleBot {
 		Poller: &tg.LongPoller{Timeout: 3 * time.Second},
 	}
 
-	// Создаём бота
 	bot, err := tg.NewBot(settings)
 	if err != nil {
 		log.Fatal(err)
@@ -50,7 +50,6 @@ func (b *TeleBot) Start(ctx context.Context) {
 				logrus.Info("TeleBot: received shutdown signal, stopping...")
 				return
 			case m := <-b.worker.MessageChannel:
-				logrus.Warn("SEND")
 				b.core.Send(&telebot.Chat{ID: m.ChatID}, m.Message)
 			}
 		}
@@ -77,20 +76,24 @@ func (b *TeleBot) Route() {
 		file, err := b.core.File(&tg.File{FileID: msg.FileID})
 		if err != nil {
 			logrus.Error(err)
-			return c.Send(errSaveVoice)
+			return c.Send(models.ErrSaveVoice)
 		}
 		voiceBytes, err := io.ReadAll(file)
 		if err != nil {
 			logrus.Error(err)
-			return c.Send(errSaveVoice)
+			return c.Send(models.ErrSaveVoice)
 		}
 
 		id, err := b.worker.SaveIncomingVoice(voiceBytes, c.Chat().ID)
 		if err != nil {
 			logrus.Error(err)
-			return c.Send(errSaveVoice)
+			return c.Send(models.ErrSaveVoice)
 		}
 
-		return c.Send(fmt.Sprintf(successSaveVoice, id))
+		return c.Send(fmt.Sprintf(models.SuccessSaveVoice, id))
 	})
+}
+
+func (b *TeleBot) RunWorker(ctx context.Context) {
+	go b.worker.Run(ctx)
 }
