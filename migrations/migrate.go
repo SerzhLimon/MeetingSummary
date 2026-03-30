@@ -16,8 +16,10 @@ func Up(db *sql.DB) error {
 	}
 
 	if _, err := tx.Exec(createEnum); err != nil {
-		tx.Rollback()
-		return err
+		if err.Error() != `pq: type "status1" already exists (42710)` {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	if _, err := tx.Exec(createTable); err != nil {
