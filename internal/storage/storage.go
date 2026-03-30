@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/models"
 )
@@ -187,7 +188,7 @@ func (s *Storage) GetVoiceForCreateSummary() ([]models.CreateSummaryData, error)
 }
 
 func (s *Storage) SetStatusSuccess(voiceID int64, summary string) error {
-	_, err := s.db.Exec(querySetStatusSuccess, voiceID, models.Success, summary)
+	_, err := s.db.Exec(querySetStatusSuccess, voiceID, models.Success, summary, time.Now())
 	return err
 }
 
@@ -199,3 +200,5 @@ func (s *Storage) GetSummaryByID(voiceID, chatID int64) (string, error) {
 	}
 	return summary, nil
 }
+
+// func (s *Storage) GetListSummaryID(chatID int64) ()

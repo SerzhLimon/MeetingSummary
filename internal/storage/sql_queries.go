@@ -69,7 +69,7 @@ const (
 
 	querySetStatusSuccess = `
 		UPDATE voice_recognize_req
-		SET process_step = $2, summary = $3
+		SET process_step = $2, summary = $3, created_at = $4
 		WHERE id = $1
 	`
 
@@ -77,5 +77,12 @@ const (
 		SELECT summary
 		FROM voice_recognize_req
 		WHERE id = $1 AND chat_id = $2
+	`
+
+	queryListSummaryID = `
+		SELECT id
+		FROM voice_recognize_req
+		WHERE chat_id = $1
+		ORDER BY created_at
 	`
 )

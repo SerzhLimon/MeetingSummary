@@ -39,7 +39,6 @@ func main() {
 
 	bot := telebot.New(cfg, storage)
 	bot.Route()
-	go bot.RunWorker(ctx)
 
 	go func() {
 		logrus.Info("Starting bot...")

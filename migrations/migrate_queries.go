@@ -16,7 +16,8 @@ const (
 			recognize_id VARCHAR, -- ответ от ручки recognize
 			response_file_id VARCHAR, -- ответ от ручки status
 			transcription TEXT, -- ответ от ручки download (расшифрованный текст)
-			summary TEXT -- выжимка гигачата
+			summary TEXT,  -- выжимка гигачата
+			created_at TIMESTAMP WITH TIME ZONE
 		);
 	`
 

@@ -58,6 +58,8 @@ func (b *TeleBot) Start(ctx context.Context) {
 		}
 	}()
 
+	go b.RunWorker(ctx)
+
 	go func() {
 		b.core.Start()
 		close(b.stopCh)
@@ -119,3 +121,14 @@ func (b *TeleBot) getHandler(c tg.Context) error {
 	}
 	return c.Send(summary)
 }
+
+// func (b *TeleBot) listHandler(c tg.Context) error {
+// 	summary, err := b.worker.GetSummaryByID(voiceID, c.Chat().ID)
+// 	if err != nil {
+// 		if errors.Is(err, sql.ErrNoRows) {
+// 			return c.Send(models.Get404)
+// 		}
+// 		return c.Send(models.MsgInternalServerError)
+// 	}
+// 	return c.Send(summary)
+// }
