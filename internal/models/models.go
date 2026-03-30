@@ -171,3 +171,12 @@ type GigaChatResponse struct {
 	Object  string            `json:"object"`
 	Usage   usageResponse     `json:"usage"`
 }
+
+// Pagination Object
+type Pagination struct {
+	Next          int
+	Previous      int
+	RecordPerPage int
+	CurrentPage   int
+	TotalPage     int
+}

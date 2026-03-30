@@ -206,3 +206,11 @@ func (w *Worker) createSummaryExecute(summaryData models.CreateSummaryData) (str
 
 	return summary, nil
 }
+
+func (w *Worker) getSummaryExecute(summaryData models.CreateSummaryData) (string, error) {
+	// var pagination int
+	// var paginator []int
+	var summary string
+	return summary, nil
+
+}
