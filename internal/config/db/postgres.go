@@ -1,9 +1,10 @@
 package db
 
 import (
-	_ "github.com/lib/pq"
 	"database/sql"
 	"fmt"
+
+	_ "github.com/lib/pq"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
 	"github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ func InitPostgresClient(cfg *config.PostgresConfig) (*sql.DB, error) {
 		FullTimestamp: true,
 	})
 	logrus.SetLevel(logrus.InfoLevel)
+	fmt.Println("config:", cfg)
 
 	options := fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.DBName, cfg.Password, cfg.SSLMode)
@@ -29,7 +31,7 @@ func InitPostgresClient(cfg *config.PostgresConfig) (*sql.DB, error) {
 		}).Error("Failed to open PostgreSQL connection")
 		return nil, err
 	}
-
+	fmt.Println("options:", options)
 	err = database.Ping()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
