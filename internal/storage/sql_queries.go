@@ -72,4 +72,10 @@ const (
 		SET process_step = $2, summary = $3
 		WHERE id = $1
 	`
+
+	queryGetVoiceByID = `
+		SELECT summary
+		FROM voice_recognize_req
+		WHERE id = $1 AND chat_id = $2
+	`
 )

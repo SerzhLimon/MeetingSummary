@@ -2,9 +2,12 @@ package telebot
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/config"
@@ -67,33 +70,52 @@ func (b *TeleBot) Stop() {
 }
 
 func (b *TeleBot) Route() {
-	b.core.Handle("/start", func(c tg.Context) error {
-		return c.Send("Привет, бродяга")
-	})
-	b.core.Handle(tg.OnVoice, func(c tg.Context) error {
-		msg := c.Message().Voice
-
-		file, err := b.core.File(&tg.File{FileID: msg.FileID})
-		if err != nil {
-			logrus.Error(err)
-			return c.Send(models.MsgErrSaveVoice)
-		}
-		voiceBytes, err := io.ReadAll(file)
-		if err != nil {
-			logrus.Error(err)
-			return c.Send(models.MsgErrSaveVoice)
-		}
-
-		id, err := b.worker.SaveIncomingVoice(voiceBytes, c.Chat().ID)
-		if err != nil {
-			logrus.Error(err)
-			return c.Send(models.MsgErrSaveVoice)
-		}
-
-		return c.Send(fmt.Sprintf(models.MsgSuccessSaveVoice, id))
-	})
+	b.core.Handle("/get", b.getHandler)
+	b.core.Handle(tg.OnVoice, b.voiceHandler)
 }
 
 func (b *TeleBot) RunWorker(ctx context.Context) {
 	go b.worker.Run(ctx)
+}
+
+func (b *TeleBot) voiceHandler(c tg.Context) error {
+	msg := c.Message().Voice
+
+	file, err := b.core.File(&tg.File{FileID: msg.FileID})
+	if err != nil {
+		logrus.Error(err)
+		return c.Send(models.MsgErrSaveVoice)
+	}
+	voiceBytes, err := io.ReadAll(file)
+	if err != nil {
+		logrus.Error(err)
+		return c.Send(models.MsgErrSaveVoice)
+	}
+
+	id, err := b.worker.SaveIncomingVoice(voiceBytes, c.Chat().ID)
+	if err != nil {
+		logrus.Error(err)
+		return c.Send(models.MsgErrSaveVoice)
+	}
+
+	return c.Send(fmt.Sprintf(models.MsgSuccessSaveVoice, id))
+}
+
+func (b *TeleBot) getHandler(c tg.Context) error {
+	args := c.Args()
+	if len(args) == 0 {
+		return c.Send(models.GetErrEmptyID)
+	}
+	voiceID, err := strconv.ParseInt(args[0], 10, 64)
+	if err != nil {
+		return c.Send(models.GetErrInvalidID)
+	}
+	summary, err := b.worker.GetSummaryByID(voiceID, c.Chat().ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return c.Send(models.Get404)
+		}
+		return c.Send(models.MsgInternalServerError)
+	}
+	return c.Send(summary)
 }

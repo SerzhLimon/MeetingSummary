@@ -9,10 +9,6 @@ func (e Err) Error() string {
 const (
 	VoiceIsProseccing  Err = "meeting processed yet"
 	NoDataForProcessed Err = "no voices for processed"
-	MsgFailSummaryProcess = "Не удалось обработать встречу. ID: %d. Повторите отправку"
-	MsgSuccesSummaryProcess = "Встреча успешно сохранена! Вы можете получить ее по ID: %d"
-	MsgErrSaveVoice = "Не удалось загрузить встречу. Повторите отправку."
-	MsgSuccessSaveVoice = "Встреча принята в обработку. ID: %d"
 
 	Fail        = "FAIL"
 	Begin       = "BEGIN"

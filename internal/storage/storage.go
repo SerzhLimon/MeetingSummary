@@ -172,7 +172,7 @@ func (s *Storage) GetVoiceForCreateSummary() ([]models.CreateSummaryData, error)
 
 	for rows.Next() {
 		var createSummaryData models.CreateSummaryData
-		err := rows.Scan(&createSummaryData.VoiceID, &createSummaryData.ChatID ,&createSummaryData.Text)
+		err := rows.Scan(&createSummaryData.VoiceID, &createSummaryData.ChatID, &createSummaryData.Text)
 		if err != nil {
 			return nil, err
 		}
@@ -189,4 +189,13 @@ func (s *Storage) GetVoiceForCreateSummary() ([]models.CreateSummaryData, error)
 func (s *Storage) SetStatusSuccess(voiceID int64, summary string) error {
 	_, err := s.db.Exec(querySetStatusSuccess, voiceID, models.Success, summary)
 	return err
+}
+
+func (s *Storage) GetSummaryByID(voiceID, chatID int64) (string, error) {
+	var summary string
+	err := s.db.QueryRow(queryGetVoiceByID, voiceID, chatID).Scan(&summary)
+	if err != nil {
+		return "", err
+	}
+	return summary, nil
 }

@@ -70,10 +70,6 @@ func (w *Worker) Run(ctx context.Context) {
 	}
 }
 
-func (w *Worker) SaveIncomingVoice(voiceBytes []byte, chatID int64) (int, error) {
-	return w.storage.SaveIncomingVoice(voiceBytes, chatID)
-}
-
 func (w *Worker) upload() {
 	uploadData, err := w.storage.GetVoiceForUpload()
 	if err != nil {
