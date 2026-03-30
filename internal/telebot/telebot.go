@@ -76,21 +76,21 @@ func (b *TeleBot) Route() {
 		file, err := b.core.File(&tg.File{FileID: msg.FileID})
 		if err != nil {
 			logrus.Error(err)
-			return c.Send(models.ErrSaveVoice)
+			return c.Send(models.MsgErrSaveVoice)
 		}
 		voiceBytes, err := io.ReadAll(file)
 		if err != nil {
 			logrus.Error(err)
-			return c.Send(models.ErrSaveVoice)
+			return c.Send(models.MsgErrSaveVoice)
 		}
 
 		id, err := b.worker.SaveIncomingVoice(voiceBytes, c.Chat().ID)
 		if err != nil {
 			logrus.Error(err)
-			return c.Send(models.ErrSaveVoice)
+			return c.Send(models.MsgErrSaveVoice)
 		}
 
-		return c.Send(fmt.Sprintf(models.SuccessSaveVoice, id))
+		return c.Send(fmt.Sprintf(models.MsgSuccessSaveVoice, id))
 	})
 }
 

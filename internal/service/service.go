@@ -82,13 +82,6 @@ func (w *Worker) upload() {
 			return
 		}
 		logrus.Error(fmt.Errorf("Worker.upload(): %w", err))
-		// for i := range uploadData {
-		// 	w.MessageChannel <- models.UserMessage{
-		// 		ChatID: uploadData[i].ChatID,
-		// 		Message: fmt.Sprintf(models.FailSummaryProcess.Error(), uploadData[i].VoiceID),
-		// 	}
-		// }
-		
 		return
 	}
 
@@ -97,22 +90,16 @@ func (w *Worker) upload() {
 		if err != nil {
 			logrus.Error(err)
 
-			// w.MessageChannel <- models.UserMessage{
-			// 	ChatID: uploadData[i].ChatID,
-			// 	Message: fmt.Sprintf(models.FailSummaryProcess.Error(), uploadData[i].VoiceID),
-			// }
+			go w.sendMsgFail(uploadData[i].ChatID, uploadData[i].VoiceID)
 
-			err = w.storage.SetStatusFail(uploadData[i].VoiceID)
+			if err = w.storage.SetStatusFail(uploadData[i].VoiceID); err != nil {
+				logrus.Error(fmt.Errorf("Worker.upload(): %w", err))
+			}
 			continue
 		}
 		err = w.storage.SetStatusUpload(uploadData[i].VoiceID, reqFileID)
 		if err != nil {
 			logrus.Error(err)
-
-			w.MessageChannel <- models.UserMessage{
-				ChatID: uploadData[i].ChatID,
-				Message: fmt.Sprintf(models.FailSummaryProcess.Error(), uploadData[i].VoiceID),
-			}
 		} else {
 			logrus.Infof("success upload: %d, %d", uploadData[i].VoiceID, uploadData[i].ChatID)
 		}
@@ -122,16 +109,20 @@ func (w *Worker) upload() {
 func (w *Worker) recognize() {
 	recognizeData, err := w.storage.GetVoiceForRecognize()
 	if err != nil {
-		//
 		logrus.Error(fmt.Errorf("Worker.recognize(): %w", err))
 		return
 	}
+
 	for i := range recognizeData {
 		recognizeID, err := w.recognizeExecute(recognizeData[i])
 		if err != nil {
 			logrus.Error(err)
-			err = w.storage.SetStatusFail(recognizeData[i].VoiceID)
-			//
+
+			go w.sendMsgFail(recognizeData[i].ChatID, recognizeData[i].VoiceID)
+
+			if err = w.storage.SetStatusFail(recognizeData[i].VoiceID); err != nil {
+				logrus.Error(fmt.Errorf("Worker.recognize(): %w", err))
+			}
 			continue
 		}
 		err = w.storage.SetStatusRecognition(recognizeData[i].VoiceID, recognizeID)
@@ -146,7 +137,6 @@ func (w *Worker) recognize() {
 func (w *Worker) checkStatus() {
 	checkStatusData, err := w.storage.GetVoiceForCheckStatus()
 	if err != nil {
-		//
 		logrus.Error(fmt.Errorf("Worker.checkStatus(): %w", err))
 		return
 	}
@@ -158,9 +148,14 @@ func (w *Worker) checkStatus() {
 				logrus.Infof("status not DONE yet: %d", checkStatusData[i].VoiceID)
 				continue
 			}
+
 			logrus.Error(err)
-			err = w.storage.SetStatusFail(checkStatusData[i].VoiceID)
-			//
+
+			go w.sendMsgFail(checkStatusData[i].ChatID, checkStatusData[i].VoiceID)
+
+			if err = w.storage.SetStatusFail(checkStatusData[i].VoiceID); err != nil {
+				logrus.Error(fmt.Errorf("Worker.checkStatus(): %w", err))
+			}
 			continue
 		}
 		err = w.storage.SetStatusWait(checkStatusData[i].VoiceID, respFileID)
@@ -175,19 +170,24 @@ func (w *Worker) checkStatus() {
 func (w *Worker) downloadTranscription() {
 	downloadTranscriptionData, err := w.storage.GetVoiceForDownloadTranscription()
 	if err != nil {
-		//
 		logrus.Error(fmt.Errorf("Worker.downloadTranscription(): %w", err))
 		return
 	}
+
 	for i := range downloadTranscriptionData {
 		text, err := w.downloadTranscriptionExecute(downloadTranscriptionData[i])
 		if err != nil {
 			if errors.Is(err, models.VoiceIsProseccing) {
 				continue
 			}
+
 			logrus.Error(err)
-			err = w.storage.SetStatusFail(downloadTranscriptionData[i].VoiceID)
-			//
+
+			go w.sendMsgFail(downloadTranscriptionData[i].ChatID, downloadTranscriptionData[i].VoiceID)
+
+			if err = w.storage.SetStatusFail(downloadTranscriptionData[i].VoiceID); err != nil {
+				logrus.Error(fmt.Errorf("Worker.downloadTranscription(): %w", err))
+			}
 			continue
 		}
 		err = w.storage.SetStatusDownload(downloadTranscriptionData[i].VoiceID, text)
@@ -202,16 +202,20 @@ func (w *Worker) downloadTranscription() {
 func (w *Worker) createSummary() {
 	createSumData, err := w.storage.GetVoiceForCreateSummary()
 	if err != nil {
-		//
-		logrus.Error(fmt.Errorf("Worker.downloadTranscription(): %w", err))
+		logrus.Error(fmt.Errorf("Worker.createSummary(): %w", err))
 		return
 	}
+
 	for i := range createSumData {
 		summary, err := w.createSummaryExecute(createSumData[i])
 		if err != nil {
 			logrus.Error(err)
-			err = w.storage.SetStatusFail(createSumData[i].VoiceID)
-			//
+
+			go w.sendMsgFail(createSumData[i].ChatID, createSumData[i].VoiceID)
+
+			if err = w.storage.SetStatusFail(createSumData[i].VoiceID); err != nil {
+				logrus.Error(fmt.Errorf("Worker.createSummary(): %w", err))
+			}
 			continue
 		}
 		err = w.storage.SetStatusSuccess(createSumData[i].VoiceID, summary)
@@ -219,16 +223,23 @@ func (w *Worker) createSummary() {
 			logrus.Error(err)
 			continue
 		}
+
 		go w.sendMsgSuccess(createSumData[i].ChatID,createSumData[i].VoiceID)
 
-		logrus.Infof("successfull create summary: %d %d", createSumData[i].VoiceID, createSumData[i].ChatID)
-		logrus.Infof("successfull create summary: %s", summary)
+		logrus.Infof("successfull create summary: %d", createSumData[i].VoiceID)
 	}
 }
 
 func (w *Worker) sendMsgSuccess(chatID, voiceID int64) {
 	w.MessageChannel <- models.UserMessage{
 		ChatID: chatID,
-		Message: fmt.Sprintf(models.SuccesSummaryProcess, voiceID),
+		Message: fmt.Sprintf(models.MsgSuccesSummaryProcess, voiceID),
+	}
+}
+
+func (w *Worker) sendMsgFail(chatID, voiceID int64) {
+	w.MessageChannel <- models.UserMessage{
+		ChatID: chatID,
+		Message: fmt.Sprintf(string(models.MsgFailSummaryProcess), voiceID),
 	}
 }
