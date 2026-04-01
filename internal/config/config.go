@@ -9,7 +9,6 @@ import (
 type BotConfig struct {
 	Token string `json:"token"`
 }
-
 // type PostgresConfig struct {
 // 	Host    string `json:"host"`
 // 	Port    string `json:"port"`
