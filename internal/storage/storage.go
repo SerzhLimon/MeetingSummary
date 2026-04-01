@@ -226,5 +226,9 @@ func (s *Storage) GetListSummaryID(chatID int64) ([]int64, error) {
 		return nil, err
 	}
 
+	if len(IDs) == 0 {
+		return IDs, sql.ErrNoRows
+	}
+
 	return IDs, nil
 }
