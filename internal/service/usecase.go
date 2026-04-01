@@ -29,3 +29,13 @@ func (w *Worker) ListResponseBuilder(IDs []int64) string {
 
 	return builder.String()
 }
+
+func (w *Worker) GigaChatReqBuilder(args []string) string {
+	var builder strings.Builder
+	for i := range args {
+		builder.WriteString(args[i])
+		builder.WriteString(" ")
+	}
+
+	return builder.String()
+}

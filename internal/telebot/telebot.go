@@ -76,6 +76,7 @@ func (b *TeleBot) Route() {
 	b.core.Handle(tg.OnAudio, b.audioHandler)
 	b.core.Handle("/get", b.getHandler)
 	b.core.Handle("/list", b.listHandler)
+	b.core.Handle("/chat", b.chatHandler)
 }
 
 func (b *TeleBot) RunWorker(ctx context.Context) {
@@ -151,7 +152,7 @@ func (b *TeleBot) getHandler(c tg.Context) error {
 	return c.Send(summary)
 }
 
-func (b *TeleBot) listHandler(c tg.Context) (error) {
+func (b *TeleBot) listHandler(c tg.Context) error {
 	IDs, err := b.worker.GetListSummaryID(c.Chat().ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -161,4 +162,17 @@ func (b *TeleBot) listHandler(c tg.Context) (error) {
 	}
 	
 	return c.Send(b.worker.ListResponseBuilder(IDs))
+}
+
+func (b *TeleBot) chatHandler(c tg.Context) error {
+	args := c.Args()
+	if len(args) == 0 {
+		return c.Send(models.ChatEmptyReq)
+	}
+
+	answer, err := b.worker.QuestionGigaChat(b.worker.GigaChatReqBuilder(args))
+	if err != nil {
+		return c.Send(models.MsgInternalServerError)
+	}
+	return c.Send(answer)
 }
