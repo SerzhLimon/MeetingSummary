@@ -76,6 +76,7 @@ func (b *TeleBot) Route() {
 	b.core.Handle(tg.OnAudio, b.audioHandler)
 	b.core.Handle("/get", b.getHandler)
 	b.core.Handle("/list", b.listHandler)
+	b.core.Handle("/find", b.findHandler)
 	b.core.Handle("/chat", b.chatHandler)
 }
 
@@ -175,4 +176,21 @@ func (b *TeleBot) chatHandler(c tg.Context) error {
 		return c.Send(models.MsgInternalServerError)
 	}
 	return c.Send(answer)
+}
+
+func (b *TeleBot) findHandler(c tg.Context) error {
+	args := c.Args()
+	if len(args) == 0 {
+		return c.Send(models.FindErrEmptyReq)
+	}
+
+	IDs, err := b.worker.FindByKeyWords(c.Chat().ID, c.Args())
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return c.Send(models.Get404)
+		}
+		return c.Send(models.MsgInternalServerError)
+	}
+	
+	return c.Send(b.worker.ListResponseBuilder(IDs))
 }

@@ -60,7 +60,6 @@ func (w *Worker) Run(ctx context.Context) {
 			logrus.Info("Worker: received shutdown signal, stopping...")
 			return
 		case <-ticker.C:
-			// logic
 			w.upload()
 			w.recognize()
 			w.checkStatus()

@@ -85,4 +85,14 @@ const (
 		WHERE chat_id = $1
 		ORDER BY created_at
 	`
+
+	queryFindByKeyWords = `
+		SELECT id
+		FROM voice_recognize_req
+		WHERE chat_id = $1 
+			AND summary IS NOT NULL
+			AND summary != ''
+			AND summary ILIKE ANY($2)
+		ORDER BY created_at
+	`
 )

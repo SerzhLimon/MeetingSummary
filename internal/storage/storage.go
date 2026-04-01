@@ -34,7 +34,7 @@ func (s *Storage) GetVoiceForUpload() ([]models.UploadData, error) {
 
 	for rows.Next() {
 		var uploadData models.UploadData
-		err := rows.Scan(&uploadData.VoiceID, &uploadData.ChatID,  &uploadData.Format, &uploadData.VoiceData)
+		err := rows.Scan(&uploadData.VoiceID, &uploadData.ChatID, &uploadData.Format, &uploadData.VoiceData)
 		if err != nil {
 			return nil, err
 		}
@@ -227,6 +227,39 @@ func (s *Storage) GetListSummaryID(chatID int64) ([]int64, error) {
 	}
 
 	if len(IDs) == 0 {
+		return IDs, sql.ErrNoRows
+	}
+
+	return IDs, nil
+}
+
+func (s *Storage) FindByKeyWords(chatID int64, keyWords []string) ([]int64, error) {
+
+	rows, err := s.db.Query(queryFindByKeyWords, chatID, keyWords)
+	if err != nil {
+		logrus.Error("Storage.FindByKeyWords", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var IDs []int64
+	for rows.Next() {
+		var ID int64
+		err := rows.Scan(&ID)
+		if err != nil {
+			logrus.Error("Storage.FindByKeyWords", err)
+			return nil, err
+		}
+		IDs = append(IDs, ID)
+	}
+
+	if err = rows.Err(); err != nil {
+		logrus.Error("Storage.FindByKeyWords", err)
+		return nil, err
+	}
+
+	if len(IDs) == 0 {
+		logrus.Error("Storage.FindByKeyWords: empty select")
 		return IDs, sql.ErrNoRows
 	}
 
