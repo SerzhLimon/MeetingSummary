@@ -1,3 +1,4 @@
+// тут лежит структура бота и его хэндлеры
 package telebot
 
 import (
@@ -46,6 +47,7 @@ func New(cfg *config.Config, storage *s.Storage) *TeleBot {
 }
 
 func (b *TeleBot) Start(ctx context.Context) {
+	// слушаем канал для сообщений юзеру и ловим контекст
 	go func() {
 		for {
 			select {
@@ -57,9 +59,9 @@ func (b *TeleBot) Start(ctx context.Context) {
 			}
 		}
 	}()
-
+	// запуск воркера
 	go b.RunWorker(ctx)
-
+	// запуск бота
 	go func() {
 		b.core.Start()
 		close(b.stopCh)
@@ -84,6 +86,8 @@ func (b *TeleBot) RunWorker(ctx context.Context) {
 	go b.worker.Run(ctx)
 }
 
+// сохраняет войс в бд и запускает процесс преобразования
+// результатом будет сообщение об успехе (или наоборот)
 func (b *TeleBot) voiceHandler(c tg.Context) error {
 	msg := c.Message().Voice
 
@@ -107,6 +111,7 @@ func (b *TeleBot) voiceHandler(c tg.Context) error {
 	return c.Send(fmt.Sprintf(models.MsgSuccessSaveVoice, id))
 }
 
+// то же самое ток с аудио (пока ограничил мп3)
 func (b *TeleBot) audioHandler(c tg.Context) error {
 	msg := c.Message().Audio
 
@@ -134,6 +139,7 @@ func (b *TeleBot) audioHandler(c tg.Context) error {
 	return c.Send(fmt.Sprintf(models.MsgSuccessSaveVoice, id))
 }
 
+// вернет самари по айдишнику
 func (b *TeleBot) getHandler(c tg.Context) error {
 	args := c.Args()
 	if len(args) == 0 {
@@ -153,6 +159,7 @@ func (b *TeleBot) getHandler(c tg.Context) error {
 	return c.Send(summary)
 }
 
+// вернет список сохраненных айдишников сохраненных встреч (ток успешных)
 func (b *TeleBot) listHandler(c tg.Context) error {
 	IDs, err := b.worker.GetListSummaryID(c.Chat().ID)
 	if err != nil {
@@ -165,6 +172,7 @@ func (b *TeleBot) listHandler(c tg.Context) error {
 	return c.Send(b.worker.ListResponseBuilder(IDs))
 }
 
+// отправляет запрос в гигачат, рузультат - ответ нейронки
 func (b *TeleBot) chatHandler(c tg.Context) error {
 	args := c.Args()
 	if len(args) == 0 {
@@ -178,6 +186,7 @@ func (b *TeleBot) chatHandler(c tg.Context) error {
 	return c.Send(answer)
 }
 
+// вернет список аналогичный ручке лист, ток поиск будет по ключевым словам
 func (b *TeleBot) findHandler(c tg.Context) error {
 	args := c.Args()
 	if len(args) == 0 {

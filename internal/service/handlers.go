@@ -1,3 +1,5 @@
+// эти методы ходят в салют и гигачат
+
 package service
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/SerzhLimon/MeetingSummary/internal/models"
 )
 
+// ручка загрузки аудюшки в салют
 func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 	w.getTokenSalute()
 
@@ -39,6 +42,7 @@ func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 	return response.Result.RequestFileID, nil
 }
 
+// ручка запуска процесса расшифровки
 func (w *Worker) recognizeExecute(recognize models.RecognizeData) (string, error) {
 	w.getTokenSalute()
 
@@ -90,6 +94,7 @@ func (w *Worker) recognizeExecute(recognize models.RecognizeData) (string, error
 	return response.Result.ID, nil
 }
 
+// ручка проверки статуса запущенной расшифровки (ждем когда ответит статусом "DONE")
 func (w *Worker) checkStatusExecute(checkStatus models.CheckStatusData) (string, error) {
 	w.getTokenSalute()
 
@@ -120,6 +125,7 @@ func (w *Worker) checkStatusExecute(checkStatus models.CheckStatusData) (string,
 	return response.Result.ResponseFileID, nil
 }
 
+// ручка загрузки транскрипции
 func (w *Worker) downloadTranscriptionExecute(download models.DownloadTranscriptionData) (string, error) {
 	w.getTokenSalute()
 
@@ -162,6 +168,7 @@ func (w *Worker) downloadTranscriptionExecute(download models.DownloadTranscript
 	return text, nil
 }
 
+// ручка в гигачат чтоб сделал саммари
 func (w *Worker) createSummaryExecute(summaryData models.CreateSummaryData) (string, error) {
 	w.getTokenGigaChat()
 
@@ -216,6 +223,7 @@ func (w *Worker) createSummaryExecute(summaryData models.CreateSummaryData) (str
 	return summary, nil
 }
 
+// ручка для прямого вопроса гигачату
 func (w *Worker) QuestionGigaChat(question string) (string, error) {
 	w.getTokenGigaChat()
 
