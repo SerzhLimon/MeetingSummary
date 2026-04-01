@@ -73,6 +73,7 @@ func (b *TeleBot) Stop() {
 
 func (b *TeleBot) Route() {
 	b.core.Handle(tg.OnVoice, b.voiceHandler)
+	b.core.Handle(tg.OnAudio, b.audioHandler)
 	b.core.Handle("/get", b.getHandler)
 	b.core.Handle("/list", b.listHandler)
 }
@@ -95,7 +96,34 @@ func (b *TeleBot) voiceHandler(c tg.Context) error {
 		return c.Send(models.MsgErrSaveVoice)
 	}
 
-	id, err := b.worker.SaveIncomingVoice(voiceBytes, c.Chat().ID)
+	id, err := b.worker.SaveIncomingVoice(voiceBytes, models.FormatOgg, c.Chat().ID)
+	if err != nil {
+		logrus.Error(err)
+		return c.Send(models.MsgErrSaveVoice)
+	}
+
+	return c.Send(fmt.Sprintf(models.MsgSuccessSaveVoice, id))
+}
+
+func (b *TeleBot) audioHandler(c tg.Context) error {
+	msg := c.Message().Audio
+
+	if msg.MIME != "audio/mpeg" && msg.MIME != "audio/mp3" {
+        return c.Send(models.MsgErrInvalidFormat)
+    }
+	
+	file, err := b.core.File(&tg.File{FileID: msg.FileID})
+	if err != nil {
+		logrus.Error(err)
+		return c.Send(models.MsgErrSaveVoice)
+	}
+	voiceBytes, err := io.ReadAll(file)
+	if err != nil {
+		logrus.Error(err)
+		return c.Send(models.MsgErrSaveVoice)
+	}
+
+	id, err := b.worker.SaveIncomingVoice(voiceBytes, models.FormatMp3, c.Chat().ID)
 	if err != nil {
 		logrus.Error(err)
 		return c.Send(models.MsgErrSaveVoice)

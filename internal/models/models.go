@@ -17,6 +17,9 @@ const (
 	Wait        = "WAIT"
 	Download    = "DOWNLOAD"
 	Success     = "SUCCESS"
+
+	FormatOgg = "audio/ogg"
+	FormatMp3 = "audio/mpeg"
 )
 
 type UserMessage struct {
@@ -27,12 +30,14 @@ type UserMessage struct {
 type UploadData struct {
 	VoiceID   int64
 	ChatID    int64
+	Format    string
 	VoiceData []byte
 }
 
 type RecognizeData struct {
 	VoiceID   int64
 	ChatID    int64
+	Format    string
 	ReqFileID string
 }
 

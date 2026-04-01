@@ -17,9 +17,9 @@ func New(db *sql.DB) *Storage {
 	return &Storage{db: db}
 }
 
-func (s *Storage) SaveIncomingVoice(voiceBytes []byte, chatID int64) (int, error) {
+func (s *Storage) SaveIncomingVoice(voiceBytes []byte, formatAudio string, chatID int64) (int, error) {
 	var voiceID int
-	err := s.db.QueryRow(querySaveIncomingVoice, voiceBytes, chatID, models.Begin).Scan(&voiceID)
+	err := s.db.QueryRow(querySaveIncomingVoice, voiceBytes, formatAudio, chatID, models.Begin).Scan(&voiceID)
 	return voiceID, err
 }
 
@@ -34,7 +34,7 @@ func (s *Storage) GetVoiceForUpload() ([]models.UploadData, error) {
 
 	for rows.Next() {
 		var uploadData models.UploadData
-		err := rows.Scan(&uploadData.VoiceID, &uploadData.ChatID, &uploadData.VoiceData)
+		err := rows.Scan(&uploadData.VoiceID, &uploadData.ChatID,  &uploadData.Format, &uploadData.VoiceData)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func (s *Storage) GetVoiceForRecognize() ([]models.RecognizeData, error) {
 
 	for rows.Next() {
 		var recognizeData models.RecognizeData
-		err := rows.Scan(&recognizeData.VoiceID, &recognizeData.ChatID, &recognizeData.ReqFileID)
+		err := rows.Scan(&recognizeData.VoiceID, &recognizeData.ChatID, &recognizeData.Format, &recognizeData.ReqFileID)
 		if err != nil {
 			return nil, err
 		}

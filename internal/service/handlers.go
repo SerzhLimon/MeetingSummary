@@ -19,7 +19,7 @@ func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+w.authSalute.AccessToken)
-	req.Header.Set("Content-Type", "audio/ogg")
+	req.Header.Set("Content-Type", upload.Format)
 
 	resp, err := w.client.Do(req)
 	if err != nil {
@@ -40,12 +40,20 @@ func (w *Worker) uploadExecute(upload models.UploadData) (string, error) {
 }
 
 func (w *Worker) recognizeExecute(recognize models.RecognizeData) (string, error) {
-	// must return recognize_id
 	w.getTokenSalute()
+
+	var audioEncoding string
+	switch recognize.Format {
+	case models.FormatOgg:
+		audioEncoding = "OPUS"
+	case models.FormatMp3:
+		audioEncoding = "MP3"
+	}
+
 	requestBody := models.RecognizeRequest{
 		Options: models.RecognizeRequestOptions{
 			Model:         "general",
-			AudioEncoding: "OPUS",
+			AudioEncoding: audioEncoding,
 			SampleRate:    16000,
 			ChannelsCount: 1,
 		},
