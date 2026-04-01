@@ -18,7 +18,6 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	// Инициализация БД
 	dbClient, err := db.InitPostgresClient(&cfg.Postgres)
 	if err != nil {
 		logrus.Fatalln(err)
