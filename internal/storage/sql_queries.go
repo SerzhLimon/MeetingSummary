@@ -79,7 +79,7 @@ const (
 		WHERE id = $1 AND chat_id = $2
 	`
 
-	queryListSummaryID = `
+	queryGetListSummaryID = `
 		SELECT id
 		FROM voice_recognize_req
 		WHERE chat_id = $1

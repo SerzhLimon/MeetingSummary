@@ -72,8 +72,9 @@ func (b *TeleBot) Stop() {
 }
 
 func (b *TeleBot) Route() {
-	b.core.Handle("/get", b.getHandler)
 	b.core.Handle(tg.OnVoice, b.voiceHandler)
+	b.core.Handle("/get", b.getHandler)
+	b.core.Handle("/list", b.listHandler)
 }
 
 func (b *TeleBot) RunWorker(ctx context.Context) {
@@ -122,13 +123,14 @@ func (b *TeleBot) getHandler(c tg.Context) error {
 	return c.Send(summary)
 }
 
-// func (b *TeleBot) listHandler(c tg.Context) error {
-// 	summary, err := b.worker.GetSummaryByID(voiceID, c.Chat().ID)
-// 	if err != nil {
-// 		if errors.Is(err, sql.ErrNoRows) {
-// 			return c.Send(models.Get404)
-// 		}
-// 		return c.Send(models.MsgInternalServerError)
-// 	}
-// 	return c.Send(summary)
-// }
+func (b *TeleBot) listHandler(c tg.Context) (error) {
+	IDs, err := b.worker.GetListSummaryID(c.Chat().ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return c.Send(models.Get404)
+		}
+		return c.Send(models.MsgInternalServerError)
+	}
+	
+	return c.Send(b.worker.ListResponseBuilder(IDs))
+}

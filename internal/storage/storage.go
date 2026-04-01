@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/SerzhLimon/MeetingSummary/internal/models"
+	"github.com/sirupsen/logrus"
 )
 
 type Storage struct {
@@ -201,4 +202,29 @@ func (s *Storage) GetSummaryByID(voiceID, chatID int64) (string, error) {
 	return summary, nil
 }
 
-// func (s *Storage) GetListSummaryID(chatID int64) ()
+func (s *Storage) GetListSummaryID(chatID int64) ([]int64, error) {
+	rows, err := s.db.Query(queryGetListSummaryID, chatID)
+	if err != nil {
+		logrus.Error("Storage.GetListSummaryID", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var IDs []int64
+	for rows.Next() {
+		var ID int64
+		err := rows.Scan(&ID)
+		if err != nil {
+			logrus.Error("Storage.GetListSummaryID", err)
+			return nil, err
+		}
+		IDs = append(IDs, ID)
+	}
+
+	if err = rows.Err(); err != nil {
+		logrus.Error("Storage.GetListSummaryID", err)
+		return nil, err
+	}
+
+	return IDs, nil
+}
